@@ -167,6 +167,32 @@
         opacity: 1;
       }
     }
+
+    .help-button-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 1000;
+      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .help-button-docked {
+      right: -30px;
+      opacity: 0.6;
+    }
+
+    .help-button-docked:hover {
+      right: -10px;
+      opacity: 1;
+    }
+
+    .help-option-btn {
+      transition: all 0.2s ease;
+    }
+
+    .help-option-btn:hover {
+      transform: scale(1.05);
+    }
   </style>
 </head>
 <body>
@@ -215,6 +241,25 @@
     const [recognitionConfidence, setRecognitionConfidence] = useState(0);
     const [lastRecognizedText, setLastRecognizedText] = useState('');
     const [filterSensitivity, setFilterSensitivity] = useState('medium');
+
+    // Estados para el sistema de Ayuda y Reportes
+    const [showHelpMenu, setShowHelpMenu] = useState(false);
+    const [helpModalType, setHelpModalType] = useState(null); // 'report' o 'suggestion'
+    const [helpDocked, setHelpDocked] = useState(false);
+    const [reports, setReports] = useState(() => JSON.parse(localStorage.getItem('bee_reports') || '[]'));
+    const [suggestions, setSuggestions] = useState(() => JSON.parse(localStorage.getItem('bee_suggestions') || '[]'));
+    
+    const [reportForm, setReportForm] = useState({ category: '', part: '', description: '' });
+    const [suggestionForm, setSuggestionForm] = useState({ description: '' });
+
+    // Guardar en localStorage cuando cambien los datos
+    useEffect(() => {
+      localStorage.setItem('bee_reports', JSON.stringify(reports));
+    }, [reports]);
+
+    useEffect(() => {
+      localStorage.setItem('bee_suggestions', JSON.stringify(suggestions));
+    }, [suggestions]);
 
     const getFilterThreshold = () => {
       switch(filterSensitivity) {
@@ -6627,14 +6672,25 @@
                       ? 'bg-yellow-400 text-black' 
                       : 'text-white hover:bg-gray-800 hover:text-yellow-400'
                   }`
-                }, 'Winners')
+                }, 'Winners'),
+                React.createElement('button', {
+                  onClick: () => {
+                    setCurrentScreen('admin');
+                    setIsMenuOpen(false);
+                  },
+                  className: `px-4 py-2 rounded-lg font-bold transition-all duration-300 ${
+                    currentScreen === 'admin' 
+                      ? 'bg-yellow-400 text-black' 
+                      : 'text-white hover:bg-gray-800 hover:text-yellow-400'
+                  }`
+                }, '⚙️ Admin')
               )
             ),
             
             // Menú móvil desplegable
             React.createElement('div', {
               className: `md:hidden absolute top-full left-0 right-0 bg-black transition-all duration-300 ease-in-out overflow-hidden z-50 ${
-                isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                isMenuOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
               }`
             },
               React.createElement('div', { className: 'py-4 space-y-2 border-t border-gray-700' },
@@ -6695,7 +6751,18 @@
                       ? 'bg-yellow-400 text-black' 
                       : 'text-white hover:bg-gray-800 hover:text-yellow-400'
                   }`
-                }, '🏅 Winners')
+                }, '🏅 Winners'),
+                React.createElement('button', {
+                  onClick: () => {
+                    setCurrentScreen('admin');
+                    setIsMenuOpen(false);
+                  },
+                  className: `w-full text-left px-4 py-3 rounded-lg font-bold transition-all duration-300 ${
+                    currentScreen === 'admin' 
+                      ? 'bg-yellow-400 text-black' 
+                      : 'text-white hover:bg-gray-800 hover:text-yellow-400'
+                  }`
+                }, '⚙️ Admin')
               )
             )
           ),
@@ -6719,7 +6786,231 @@
         currentScreen === 'instructions' && React.createElement(InstructionsScreen),
         currentScreen === 'winners' && React.createElement(WinnersScreen),
         showSuccessModal && React.createElement(SuccessModal, {}),
-        showErrorModal && React.createElement(ErrorModal, {})
+        showErrorModal && React.createElement(ErrorModal, {}),
+        currentScreen === 'admin' && React.createElement(AdminScreen),
+        
+        // Botón Flotante de Ayuda
+        React.createElement('div', {
+          className: `help-button-container ${helpDocked ? 'help-button-docked' : ''}`
+        },
+          // Botón principal
+          React.createElement('button', {
+            onClick: () => setShowHelpMenu(!showHelpMenu),
+            className: 'w-14 h-14 bg-yellow-400 rounded-full shadow-lg flex items-center justify-center text-2xl font-bold hover:bg-yellow-500 transition-all duration-300 transform hover:scale-110'
+          }, '?'),
+          
+          // Gesto/Botón para acoplar (dock)
+          React.createElement('button', {
+            onClick: (e) => {
+              e.stopPropagation();
+              setHelpDocked(!helpDocked);
+              setShowHelpMenu(false);
+            },
+            className: 'absolute -top-2 -left-2 w-6 h-6 bg-gray-800 text-white rounded-full text-xs flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300'
+          }, helpDocked ? '➡️' : '⬅️'),
+          
+          // Menú de opciones (desplegable arriba del botón)
+          showHelpMenu && React.createElement('div', {
+            className: 'absolute bottom-16 right-0 bg-white rounded-xl shadow-2xl p-2 w-48 border-2 border-yellow-400 animate-slideUp'
+          },
+            React.createElement('button', {
+              onClick: () => {
+                setHelpModalType('report');
+                setShowHelpMenu(false);
+              },
+              className: 'w-full text-left px-4 py-3 hover:bg-red-50 text-red-600 font-bold rounded-lg flex items-center gap-2 help-option-btn'
+            }, '⚠️ Reportar problema'),
+            React.createElement('button', {
+              onClick: () => {
+                setHelpModalType('suggestion');
+                setShowHelpMenu(false);
+              },
+              className: 'w-full text-left px-4 py-3 hover:bg-blue-50 text-blue-600 font-bold rounded-lg flex items-center gap-2 mt-1 help-option-btn'
+            }, '💡 Sugerencias')
+          )
+        ),
+        
+        // Modales de Ayuda
+        helpModalType && React.createElement(HelpModal, {
+          type: helpModalType,
+          onClose: () => setHelpModalType(null),
+          onSubmit: (data) => {
+            if (helpModalType === 'report') {
+              setReports([...reports, { ...data, id: Date.now(), date: new Date().toLocaleString() }]);
+            } else {
+              setSuggestions([...suggestions, { ...data, id: Date.now(), date: new Date().toLocaleString() }]);
+            }
+            setHelpModalType(null);
+            alert('¡Gracias! Tu mensaje ha sido registrado.');
+          }
+        })
+      );
+    };
+
+    // Componente Modal de Ayuda
+    const HelpModal = ({ type, onClose, onSubmit }) => {
+      const [step, setStep] = useState(1);
+      const [formData, setFormData] = useState(
+        type === 'report' 
+          ? { category: '', part: '', description: '' } 
+          : { description: '' }
+      );
+
+      const isReport = type === 'report';
+
+      return React.createElement('div', {
+        className: 'fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[2000] p-4 animate-fadeIn'
+      },
+        React.createElement('div', {
+          className: 'bg-white rounded-3xl w-full max-w-md overflow-hidden shadow-2xl border-4 border-yellow-400 animate-modalGrow'
+        },
+          // Header
+          React.createElement('div', { className: 'bg-yellow-400 p-6 flex justify-between items-center' },
+            React.createElement('h2', { className: 'text-2xl font-black text-black' }, 
+              isReport ? '⚠️ Reportar Problema' : '💡 Sugerencia'
+            ),
+            React.createElement('button', { onClick: onClose, className: 'text-2xl font-bold' }, '✕')
+          ),
+          
+          // Cuerpo
+          React.createElement('div', { className: 'p-6' },
+            isReport ? (
+              // FLUJO DE REPORTE
+              step === 1 ? (
+                React.createElement('div', { className: 'space-y-4' },
+                  React.createElement('p', { className: 'font-bold text-gray-700' }, '¿Qué tipo de problema encontraste?'),
+                  ['Audio/Voz', 'Visualización', 'Ortografía', 'Otro'].map(cat => 
+                    React.createElement('button', {
+                      key: cat,
+                      onClick: () => {
+                        setFormData({...formData, category: cat});
+                        setStep(2);
+                      },
+                      className: 'w-full p-4 text-left border-2 border-gray-100 rounded-xl hover:border-yellow-400 hover:bg-yellow-50 transition-all font-bold'
+                    }, cat)
+                  )
+                )
+              ) : step === 2 ? (
+                React.createElement('div', { className: 'space-y-4' },
+                  React.createElement('p', { className: 'font-bold text-gray-700' }, '¿En qué parte de la app ocurrió?'),
+                  ['Inicio', 'Menú', 'En el Juego', 'Ganadores'].map(part => 
+                    React.createElement('button', {
+                      key: part,
+                      onClick: () => {
+                        setFormData({...formData, part: part});
+                        setStep(3);
+                      },
+                      className: 'w-full p-4 text-left border-2 border-gray-100 rounded-xl hover:border-yellow-400 hover:bg-yellow-50 transition-all font-bold'
+                    }, part)
+                  ),
+                  React.createElement('button', { onClick: () => setStep(1), className: 'text-blue-600 font-bold underline w-full text-center mt-2' }, '← Volver')
+                )
+              ) : (
+                React.createElement('div', { className: 'space-y-4' },
+                  React.createElement('p', { className: 'font-bold text-gray-700' }, 'Cuéntanos un poco más:'),
+                  React.createElement('textarea', {
+                    className: 'w-full p-4 border-2 border-gray-200 rounded-xl focus:border-yellow-400 outline-none h-32',
+                    placeholder: 'Escribe aquí tu descripción...',
+                    value: formData.description,
+                    onChange: (e) => setFormData({...formData, description: e.target.value})
+                  }),
+                  React.createElement('div', { className: 'flex gap-2' },
+                    React.createElement('button', { onClick: () => setStep(2), className: 'flex-1 p-4 bg-gray-100 rounded-xl font-bold' }, 'Volver'),
+                    React.createElement('button', { 
+                      onClick: () => onSubmit(formData),
+                      disabled: !formData.description.trim(),
+                      className: 'flex-1 p-4 bg-yellow-400 rounded-xl font-black disabled:opacity-50' 
+                    }, 'ENVIAR')
+                  )
+                )
+              )
+            ) : (
+              // FLUJO DE SUGERENCIAS
+              React.createElement('div', { className: 'space-y-4' },
+                React.createElement('div', { className: 'bg-blue-50 p-4 rounded-xl border-l-4 border-blue-400' },
+                  React.createElement('p', { className: 'text-sm text-blue-800' }, 
+                    '🌟 ¡Tus ideas nos ayudan a crecer! Puedes sugerir nuevas palabras, cambios en el diseño o funciones adicionales.'
+                  )
+                ),
+                React.createElement('p', { className: 'font-bold text-gray-700' }, 'Escribe tu sugerencia:'),
+                React.createElement('textarea', {
+                  className: 'w-full p-4 border-2 border-gray-200 rounded-xl focus:border-yellow-400 outline-none h-40',
+                  placeholder: 'Ej: Me gustaría que hubiera un modo contrarreloj...',
+                  value: formData.description,
+                  onChange: (e) => setFormData({...formData, description: e.target.value})
+                }),
+                React.createElement('button', { 
+                  onClick: () => onSubmit(formData),
+                  disabled: !formData.description.trim(),
+                  className: 'w-full p-4 bg-yellow-400 rounded-xl font-black disabled:opacity-50' 
+                }, 'ENVIAR SUGERENCIA')
+              )
+            )
+          )
+        )
+      );
+    };
+
+    // Componente Pantalla de Admin
+    const AdminScreen = () => {
+      const [view, setView] = useState('reports'); // 'reports' o 'suggestions'
+      const reports = JSON.parse(localStorage.getItem('bee_reports') || '[]');
+      const suggestions = JSON.parse(localStorage.getItem('bee_suggestions') || '[]');
+
+      const clearData = () => {
+        if (confirm('¿Estás seguro de que quieres borrar todos los datos registrados?')) {
+          localStorage.setItem('bee_reports', '[]');
+          localStorage.setItem('bee_suggestions', '[]');
+          location.reload();
+        }
+      };
+
+      return React.createElement('div', { className: 'min-h-screen bg-gray-50 p-6 pt-24' },
+        React.createElement('div', { className: 'max-w-4xl mx-auto' },
+          React.createElement('div', { className: 'flex justify-between items-center mb-8' },
+            React.createElement('h1', { className: 'text-4xl font-black text-black' }, '⚙️ Panel de Admin'),
+            React.createElement('button', { 
+              onClick: clearData,
+              className: 'bg-red-500 text-white px-4 py-2 rounded-lg font-bold text-sm'
+            }, 'Borrar Todo')
+          ),
+
+          // Tabs
+          React.createElement('div', { className: 'flex gap-4 mb-6' },
+            React.createElement('button', {
+              onClick: () => setView('reports'),
+              className: `flex-1 p-4 rounded-xl font-bold transition-all ${view === 'reports' ? 'bg-yellow-400 text-black shadow-lg' : 'bg-white text-gray-500'}`
+            }, `Reportes (${reports.length})`),
+            React.createElement('button', {
+              onClick: () => setView('suggestions'),
+              className: `flex-1 p-4 rounded-xl font-bold transition-all ${view === 'suggestions' ? 'bg-yellow-400 text-black shadow-lg' : 'bg-white text-gray-500'}`
+            }, `Sugerencias (${suggestions.length})`)
+          ),
+
+          // Lista
+          React.createElement('div', { className: 'space-y-4' },
+            view === 'reports' ? (
+              reports.length === 0 ? React.createElement('p', { className: 'text-center py-20 text-gray-400 font-bold' }, 'No hay reportes todavía.') :
+              reports.map(r => React.createElement('div', { key: r.id, className: 'bg-white p-6 rounded-2xl shadow-sm border-l-8 border-red-400' },
+                React.createElement('div', { className: 'flex justify-between mb-2' },
+                  React.createElement('span', { className: 'bg-red-100 text-red-600 px-3 py-1 rounded-full text-xs font-black' }, r.category),
+                  React.createElement('span', { className: 'text-gray-400 text-xs' }, r.date)
+                ),
+                React.createElement('p', { className: 'font-black text-lg mb-1' }, `Parte: ${r.part}`),
+                React.createElement('p', { className: 'text-gray-700' }, r.description)
+              ))
+            ) : (
+              suggestions.length === 0 ? React.createElement('p', { className: 'text-center py-20 text-gray-400 font-bold' }, 'No hay sugerencias todavía.') :
+              suggestions.map(s => React.createElement('div', { key: s.id, className: 'bg-white p-6 rounded-2xl shadow-sm border-l-8 border-blue-400' },
+                React.createElement('div', { className: 'flex justify-between mb-2' },
+                  React.createElement('span', { className: 'bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-xs font-black' }, 'SUGERENCIA'),
+                  React.createElement('span', { className: 'text-gray-400 text-xs' }, s.date)
+                ),
+                React.createElement('p', { className: 'text-gray-700' }, s.description)
+              ))
+            )
+          )
+        )
       );
     };
 
