@@ -5244,7 +5244,7 @@
             
             if (i < spoken.length && i < target.length) {
               // Ambas letras existen - comparar
-              displayLetter = spokenLetter.toUpperCase();
+              displayLetter = spokenLetter;
               if (spokenLetter === targetLetter) {
                 letterClass += 'text-green-800 bg-green-200 border-green-400';
               } else {
@@ -5252,11 +5252,11 @@
               }
             } else if (i < spoken.length) {
               // Letra extra deletreada
-              displayLetter = spokenLetter.toUpperCase();
+              displayLetter = spokenLetter;
               letterClass += 'text-red-800 bg-red-200 border-red-400';
             } else {
               // Letra faltante (mostrar la letra objetivo)
-              displayLetter = targetLetter.toUpperCase();
+              displayLetter = targetLetter;
               letterClass += 'text-gray-600 bg-gray-200 border-gray-400';
             }
             
@@ -5474,7 +5474,7 @@
             React.createElement('span', {
               key: i,
               className: letterClass
-            }, spokenLetter.toUpperCase() || '_')
+            }, spokenLetter || '_')
           );
         }
 
@@ -5535,7 +5535,7 @@
                   // Palabra principal - más compacta
                   React.createElement('div', { className: 'text-center bg-gray-50 rounded-lg p-4 border border-gray-200' },
                     React.createElement('h3', { className: 'text-lg font-bold text-black mb-2' }, 'Word to spell:'),
-                    React.createElement('div', { className: 'text-3xl font-bold text-blue-600 mb-2' }, currentWord.word.toUpperCase()),
+                    React.createElement('div', { className: 'text-3xl font-bold text-blue-600 mb-2' }, currentWord.word),
                     React.createElement('div', { className: 'text-base text-gray-600 font-mono' }, currentWord.phonetic)
                   ),
                   
