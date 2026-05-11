@@ -4691,7 +4691,7 @@
                             }, 'Zu buchstabierendes Wort:'),
                             React.createElement('div', { 
                               className: 'text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600 mb-1' 
-                            }, currentWord.word.toUpperCase()),
+                            }, currentWord.word),
                             React.createElement('div', { 
                               className: 'text-xs sm:text-sm lg:text-base text-gray-600 font-mono' 
                             }, currentWord.definition || currentWord.phonetic || '')
@@ -4751,7 +4751,7 @@
                           currentWord && React.createElement('div', { className: 'flex flex-col' },
                             React.createElement('div', { className: 'text-xs font-medium text-gray-600 mb-1' }, 'Ziel'),
                             React.createElement('div', { className: 'target-word' },
-                              React.createElement('strong', { className: 'text-gray-800 text-sm font-mono' }, currentWord.word.toUpperCase())
+                              React.createElement('strong', { className: 'text-gray-800 text-sm font-mono' }, currentWord.word)
                             )
                           ),
                           
