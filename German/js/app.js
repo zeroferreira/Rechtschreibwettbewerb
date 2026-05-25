@@ -335,6 +335,365 @@
       );
     };
 
+    // Global NavigationBar outside SpielRechtschreibung to prevent React remounting
+    const NavigationBar = ({
+      currentScreen,
+      setCurrentScreen,
+      gameMode,
+      setGameMode,
+      isMenüOpen,
+      setIsMenüOpen,
+      isAdminLogged,
+      setIsAdminLogged,
+      isEditMode,
+      setIsEditMode,
+      themeConfig,
+      setThemeConfig,
+      showThemeModal,
+      setShowThemeModal
+    }) => {
+        const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+        useEffect(() => {
+          const handleResize = () => setWindowWidth(window.innerWidth);
+          window.addEventListener('resize', handleResize);
+          return () => window.removeEventListener('resize', handleResize);
+        }, []);
+
+        const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0, color: '#FFE259', opacity: 0 });
+
+        const isDay = themeConfig.mode === 'day';
+        const navItems = [
+          { id: 'home', color: isDay ? '#D97706' : '#FFD54F' },
+          { id: 'contest', color: isDay ? '#7C3AED' : '#BA68C8' },
+          { id: 'training', color: isDay ? '#0284C7' : '#29B6F6' },
+          { id: 'instructions', color: isDay ? '#059669' : '#26A69A' },
+          { id: 'winners', color: isDay ? '#D97706' : '#FFD54F' }
+        ];
+
+        const getActiveItemId = () => {
+          if (currentScreen === 'home') return 'home';
+          if (currentScreen === 'menu' && gameMode === 'contest') return 'contest';
+          if ((currentScreen === 'menu' || currentScreen === 'wordList') && gameMode === 'training') return 'training';
+          if (currentScreen === 'instructions') return 'instructions';
+          if (currentScreen === 'winners') return 'winners';
+          return null;
+        };
+
+        useEffect(() => {
+          const timer = setTimeout(() => {
+            const container = document.getElementById('desktop-nav-menu');
+            if (!container) return;
+            const activeEl = container.querySelector('.active-nav-btn');
+            if (activeEl) {
+              const left = activeEl.offsetLeft;
+              const width = activeEl.offsetWidth;
+              const activeId = getActiveItemId();
+              const activeItem = navItems.find(item => item.id === activeId);
+              const color = activeItem ? activeItem.color : '#FFE259';
+              
+              setIndicatorStyle({
+                left: left + (width * 0.15),
+                width: width * 0.7,
+                color: color,
+                opacity: 1
+              });
+            } else {
+              setIndicatorStyle(prev => ({ ...prev, opacity: 0 }));
+            }
+          }, 50);
+          return () => clearTimeout(timer);
+        }, [currentScreen, gameMode, windowWidth, themeConfig.mode]);
+
+        const getNavLinkClass = (screenName, extraCheck = null, glowClass = '') => {
+          const isActive = extraCheck 
+            ? (currentScreen === screenName && extraCheck()) 
+            : currentScreen === screenName;
+          return `nav-item-btn-glass ${glowClass} px-4 py-2 font-bold text-[15px] lg:text-[17px] relative ${
+            isActive 
+              ? 'active-nav-btn text-white' 
+              : 'text-gray-300'
+          }`;
+        };
+
+        const handleAdminAccess = () => {
+          const pass = prompt("Admin-Passwort:");
+          if (pass === atob('MTQxNTEzMA==')) {
+            setIsAdminLogged(true);
+            setCurrentScreen('admin');
+            setIsMenüOpen(false);
+          } else if (pass !== null) {
+            alert("Falsches Passwort");
+          }
+        };
+
+        const toggleTheme = () => {
+          setThemeConfig(prev => {
+            const newMode = prev.mode === 'night' ? 'day' : 'night';
+            localStorage.setItem('bee_de_theme', newMode);
+            return { ...prev, mode: newMode };
+          });
+        };
+
+        const ThemeToggleButton = () => {
+          return React.createElement('button', {
+            onClick: toggleTheme,
+            className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-white border-opacity-20 hover:bg-white hover:bg-opacity-20 transition-all flex items-center justify-center flex-shrink-0',
+            title: themeConfig.mode === 'night' ? 'Tagmodus' : 'Nachtmodus',
+            style: { width: '38px', height: '38px', fontSize: '1.1rem' }
+          }, themeConfig.mode === 'night' ? '🌙' : '☀️');
+        };
+
+        const AdminSettingsButton = () => {
+          return React.createElement('button', {
+            onClick: () => setShowThemeModal(true),
+            className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-white border-opacity-20 hover:bg-white hover:bg-opacity-20 transition-all flex items-center justify-center flex-shrink-0',
+            title: 'Visuelle Einstellungen',
+            style: { width: '38px', height: '38px', fontSize: '1.1rem' }
+          }, '⚙️');
+        };
+
+        const ChangeLanguageButton = () => {
+          return React.createElement('a', {
+            href: 'https://spellingbee-portal.vercel.app/',
+            className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-yellow-400 border-opacity-40 hover:bg-yellow-400 hover:text-black transition-all flex items-center justify-center text-yellow-400 hover:border-yellow-400 flex-shrink-0 font-bold text-[11px] px-4 uppercase tracking-wider gap-3',
+            title: 'Sprache ändern',
+            style: { height: '38px' }
+          }, 
+            React.createElement('span', { className: 'text-[1.1rem] flex-shrink-0' }, '🌐'),
+            React.createElement('span', {}, 'Andere Sprache ?')
+          );
+        };
+
+        const EditModeToggleButton = () => {
+          if (!isAdminLogged) return null;
+          return React.createElement('button', {
+            onClick: () => setIsEditMode(!isEditMode),
+            className: 'bg-yellow-400 text-black px-4 py-2 rounded-full font-bold transition-all hover:bg-yellow-300 text-sm flex-shrink-0',
+            title: isEditMode ? 'Bearbeitung beenden' : '✏️ Layout bearbeiten',
+          }, isEditMode ? 'Bearbeitung beenden' : '✏️ Layout bearbeiten');
+        };
+        
+        return React.createElement('nav', { 
+          className: 'floating-nav-capsule relative px-6 py-3',
+          style: { zIndex: 1000 }
+        },
+          React.createElement('div', { className: 'w-full flex justify-between items-center' },
+            React.createElement('div', { className: 'flex items-center gap-3 cursor-pointer', onClick: () => { setGameMode(null); setCurrentScreen('home'); } },
+              React.createElement('div', { className: 'relative w-9 h-9 flex items-center justify-center' },
+                React.createElement('div', {
+                  className: 'absolute inset-0 bg-black border border-yellow-400 border-opacity-70 flex items-center justify-center',
+                  style: {
+                    clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
+                    WebkitClipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)'
+                  }
+                },
+                  React.createElement('img', {
+                    src: 'IMG/Abeja.png',
+                    alt: 'Logo Bee',
+                    className: 'w-8 h-8 object-contain filter drop-shadow-[0_2px_8px_rgba(253,224,71,0.45)]'
+                  })
+                )
+              ),
+              React.createElement('div', { className: 'flex flex-col leading-[1.1] text-left animate-fade-in' },
+                React.createElement('span', { className: 'font-black text-[9px] tracking-wider text-slate-300 uppercase' }, "RECHTSCHREIB"),
+                React.createElement('span', { className: 'font-black text-[12px] tracking-widest text-yellow-400 uppercase -mt-0.5' }, "WETTBEWERB")
+              )
+            ),
+            
+            React.createElement('button', {
+              onClick: () => setIsMenüOpen(!isMenüOpen),
+              className: 'md:hidden text-white hover:text-yellow-400 transition-colors duration-300 p-2'
+            },
+              React.createElement('div', { className: 'w-6 h-6 flex flex-col justify-center items-center' },
+                React.createElement('span', {
+                  className: `block w-6 h-0.5 bg-current transition-all duration-300 ${isMenüOpen ? 'rotate-45 translate-y-1.5' : ''}`
+                }),
+                React.createElement('span', {
+                  className: `block w-6 h-0.5 bg-current transition-all duration-300 mt-1 ${isMenüOpen ? 'opacity-0' : ''}`
+                }),
+                React.createElement('span', {
+                  className: `block w-6 h-0.5 bg-current transition-all duration-300 mt-1 ${isMenüOpen ? '-rotate-45 -translate-y-1.5' : ''}`
+                })
+              )
+            ),
+            
+            React.createElement('div', { 
+              id: 'desktop-nav-menu',
+              className: 'hidden md:flex items-center gap-4 lg:gap-6 relative py-2' 
+            },
+              React.createElement('button', {
+                onClick: () => {
+                  setGameMode(null);
+                  setCurrentScreen('home');
+                  setIsMenüOpen(false);
+                },
+                className: getNavLinkClass('home', null, 'card-winners-glow')
+              }, 'Startseite'),
+              React.createElement('button', {
+                onClick: () => {
+                  setGameMode('contest');
+                  setCurrentScreen('menu');
+                  setIsMenüOpen(false);
+                },
+                className: getNavLinkClass('menu', () => gameMode === 'contest', 'card-contest-glow')
+              }, 'Wettbewerb'),
+              React.createElement('button', {
+                onClick: () => {
+                  setGameMode('training');
+                  setCurrentScreen('menu');
+                  setIsMenüOpen(false);
+                },
+                className: getNavLinkClass('menu', () => gameMode === 'training', 'card-training-glow')
+              }, 'Training'),
+              React.createElement('button', {
+                onClick: () => {
+                  setCurrentScreen('instructions');
+                  setIsMenüOpen(false);
+                },
+                className: getNavLinkClass('instructions', null, 'card-instructions-glow')
+              }, 'Anleitung'),
+              React.createElement('button', {
+                onClick: () => {
+                  setCurrentScreen('winners');
+                  setIsMenüOpen(false);
+                },
+                className: getNavLinkClass('winners', null, 'card-winners-glow')
+              }, 'Gewinner'),
+              React.createElement(ThemeToggleButton),
+              React.createElement(ChangeLanguageButton),
+              isAdminLogged && React.createElement(AdminSettingsButton),
+              isAdminLogged && React.createElement(EditModeToggleButton),
+              React.createElement('button', {
+                onClick: handleAdminAccess,
+                className: 'btn-admin-glass flex items-center gap-3 font-bold px-4'
+              }, 
+                React.createElement('span', { className: 'text-[1rem] flex-shrink-0' }, '⚙️'),
+                React.createElement('span', {}, 'Admin')
+              ),
+ 
+              // Dynamic Sliding Indicator
+              React.createElement('div', {
+                className: 'absolute transition-all duration-300 ease-out pointer-events-none',
+                style: {
+                  left: `${indicatorStyle.left}px`,
+                  width: `${indicatorStyle.width}px`,
+                  height: '2.5px',
+                  bottom: '4px',
+                  backgroundColor: indicatorStyle.color,
+                  boxShadow: `0 0 10px ${indicatorStyle.color}, 0 0 18px ${indicatorStyle.color}80`,
+                  borderRadius: '99px',
+                  opacity: indicatorStyle.opacity,
+                  transform: `scaleX(${indicatorStyle.opacity})`,
+                  transitionProperty: 'left, width, background-color, box-shadow, opacity, transform'
+                }
+              },
+                // Dot centered below the line
+                React.createElement('div', {
+                  className: 'absolute left-1/2 -translate-x-1/2 rounded-full transition-all duration-300 ease-out',
+                  style: {
+                    width: '6px',
+                    height: '6px',
+                    bottom: '-10px',
+                    backgroundColor: indicatorStyle.color,
+                    boxShadow: `0 0 8px ${indicatorStyle.color}, 0 0 14px ${indicatorStyle.color}80`,
+                  }
+                })
+              )
+            )
+          ),
+          
+          React.createElement('div', {
+            className: `md:hidden absolute top-full left-0 right-0 bg-black transition-all duration-300 ease-in-out overflow-hidden z-50 ${
+              isMenüOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
+            }`
+          },
+            React.createElement('div', { className: 'py-4 space-y-2 border-t border-gray-700' },
+              React.createElement('button', {
+                onClick: () => {
+                  setGameMode(null);
+                  setCurrentScreen('home');
+                  setIsMenüOpen(false);
+                },
+                className: `w-full text-left px-4 py-3 rounded-lg font-bold transition-all duration-300 ${
+                  currentScreen === 'home' 
+                    ? 'bg-yellow-400 text-black' 
+                    : 'text-white hover:bg-gray-800 hover:text-yellow-400'
+                }`
+              }, '🏠 Startseite'),
+              React.createElement('button', {
+                onClick: () => {
+                  setGameMode('contest');
+                  setCurrentScreen('menu');
+                  setIsMenüOpen(false);
+                },
+                className: `w-full text-left px-4 py-3 rounded-lg font-bold transition-all duration-300 ${
+                  currentScreen === 'menu' && gameMode === 'contest'
+                    ? 'bg-yellow-400 text-black' 
+                    : 'text-white hover:bg-gray-800 hover:text-yellow-400'
+                }`
+              }, '🏆 Wettbewerb'),
+              React.createElement('button', {
+                onClick: () => {
+                  setGameMode('training');
+                  setCurrentScreen('menu');
+                  setIsMenüOpen(false);
+                },
+                className: `w-full text-left px-4 py-3 rounded-lg font-bold transition-all duration-300 ${
+                  (currentScreen === 'menu' || currentScreen === 'wordList') && gameMode === 'training'
+                    ? 'bg-yellow-400 text-black' 
+                    : 'text-white hover:bg-gray-800 hover:text-yellow-400'
+                }`
+              }, '💪 Training'),
+              React.createElement('button', {
+                onClick: () => {
+                  setCurrentScreen('instructions');
+                  setIsMenüOpen(false);
+                },
+                className: `w-full text-left px-4 py-3 rounded-lg font-bold transition-all duration-300 ${
+                  currentScreen === 'instructions' 
+                    ? 'bg-yellow-400 text-black' 
+                    : 'text-white hover:bg-gray-800 hover:text-yellow-400'
+                }`
+              }, '📖 Anleitung'),
+              React.createElement('button', {
+                onClick: () => {
+                  setCurrentScreen('winners');
+                  setIsMenüOpen(false);
+                },
+                className: `w-full text-left px-4 py-3 rounded-lg font-bold transition-all duration-300 ${
+                  currentScreen === 'winners' 
+                    ? 'bg-yellow-400 text-black' 
+                    : 'text-white hover:bg-gray-800 hover:text-yellow-400'
+                }`
+              }, '🏅 Gewinner'),
+              React.createElement('button', {
+                onClick: handleAdminAccess,
+                className: `w-full text-left px-4 py-3 rounded-lg font-bold transition-all duration-300 ${
+                  currentScreen === 'admin' 
+                    ? 'bg-yellow-400 text-black' 
+                    : 'text-white hover:bg-gray-800 hover:text-yellow-400'
+                }`
+              }, '⚙️ Admin'),
+              React.createElement('a', {
+                href: 'https://spellingbee-portal.vercel.app/',
+                className: 'w-full text-left px-4 py-3 rounded-lg font-bold transition-all duration-300 text-yellow-400 hover:bg-gray-800 hover:text-yellow-300 block border border-dashed border-yellow-400/30 mt-2'
+              }, '🌐 Andere Sprache ?'),
+              React.createElement('div', { className: 'flex flex-col gap-2 px-4 py-2 border-t border-gray-800 mt-2' },
+                React.createElement('div', { className: 'flex justify-center gap-4' },
+                  ThemeToggleButton()
+                ),
+                EditModeToggleButton()
+              )
+            )
+          ),
+          
+          isMenüOpen && React.createElement('div', {
+            className: 'fixed inset-0 bg-black bg-opacity-30 z-30 md:hidden',
+            onClick: () => setIsMenüOpen(false)
+          })
+        );
+      };
+
     const SpielRechtschreibung = () => {
 
     // Theme and Visual Settings State
@@ -2734,352 +3093,6 @@
         );
       };
 
-      const NavigationBar = () => {
-        if (typeof setIsMenüOpen === 'undefined' || typeof isMenüOpen === 'undefined') {
-          console.error('NavigationBar: isMenüOpen state not available');
-          return null;
-        }
-
-        const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-        useEffect(() => {
-          const handleResize = () => setWindowWidth(window.innerWidth);
-          window.addEventListener('resize', handleResize);
-          return () => window.removeEventListener('resize', handleResize);
-        }, []);
-
-        const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0, color: '#FFE259', opacity: 0 });
-
-        const isDay = themeConfig.mode === 'day';
-        const navItems = [
-          { id: 'home', color: isDay ? '#D97706' : '#FFD54F' },
-          { id: 'contest', color: isDay ? '#7C3AED' : '#BA68C8' },
-          { id: 'training', color: isDay ? '#0284C7' : '#29B6F6' },
-          { id: 'instructions', color: isDay ? '#059669' : '#26A69A' },
-          { id: 'winners', color: isDay ? '#D97706' : '#FFD54F' }
-        ];
-
-        const getActiveItemId = () => {
-          if (currentScreen === 'home') return 'home';
-          if (currentScreen === 'menu' && gameMode === 'contest') return 'contest';
-          if ((currentScreen === 'menu' || currentScreen === 'wordList') && gameMode === 'training') return 'training';
-          if (currentScreen === 'instructions') return 'instructions';
-          if (currentScreen === 'winners') return 'winners';
-          return null;
-        };
-
-        useEffect(() => {
-          const timer = setTimeout(() => {
-            const container = document.getElementById('desktop-nav-menu');
-            if (!container) return;
-            const activeEl = container.querySelector('.active-nav-btn');
-            if (activeEl) {
-              const left = activeEl.offsetLeft;
-              const width = activeEl.offsetWidth;
-              const activeId = getActiveItemId();
-              const activeItem = navItems.find(item => item.id === activeId);
-              const color = activeItem ? activeItem.color : '#FFE259';
-              
-              setIndicatorStyle({
-                left: left + (width * 0.15),
-                width: width * 0.7,
-                color: color,
-                opacity: 1
-              });
-            } else {
-              setIndicatorStyle(prev => ({ ...prev, opacity: 0 }));
-            }
-          }, 50);
-          return () => clearTimeout(timer);
-        }, [currentScreen, gameMode, windowWidth, themeConfig.mode]);
-
-        const getNavLinkClass = (screenName, extraCheck = null, glowClass = '') => {
-          const isActive = extraCheck 
-            ? (currentScreen === screenName && extraCheck()) 
-            : currentScreen === screenName;
-          return `nav-item-btn-glass ${glowClass} px-4 py-2 font-bold text-[15px] lg:text-[17px] relative ${
-            isActive 
-              ? 'active-nav-btn text-white' 
-              : 'text-gray-300'
-          }`;
-        };
-
-        const handleAdminAccess = () => {
-          const pass = prompt("Admin-Passwort:");
-          if (pass === atob('MTQxNTEzMA==')) {
-            setIsAdminLogged(true);
-            setCurrentScreen('admin');
-            setIsMenüOpen(false);
-          } else if (pass !== null) {
-            alert("Falsches Passwort");
-          }
-        };
-
-        const toggleTheme = () => {
-          setThemeConfig(prev => {
-            const newMode = prev.mode === 'night' ? 'day' : 'night';
-            localStorage.setItem('bee_de_theme', newMode);
-            return { ...prev, mode: newMode };
-          });
-        };
-
-        const ThemeToggleButton = () => {
-          return React.createElement('button', {
-            onClick: toggleTheme,
-            className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-white border-opacity-20 hover:bg-white hover:bg-opacity-20 transition-all flex items-center justify-center flex-shrink-0',
-            title: themeConfig.mode === 'night' ? 'Tagmodus' : 'Nachtmodus',
-            style: { width: '38px', height: '38px', fontSize: '1.1rem' }
-          }, themeConfig.mode === 'night' ? '🌙' : '☀️');
-        };
-
-        const AdminSettingsButton = () => {
-          return React.createElement('button', {
-            onClick: () => setShowThemeModal(true),
-            className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-white border-opacity-20 hover:bg-white hover:bg-opacity-20 transition-all flex items-center justify-center flex-shrink-0',
-            title: 'Visuelle Einstellungen',
-            style: { width: '38px', height: '38px', fontSize: '1.1rem' }
-          }, '⚙️');
-        };
-
-        const ChangeLanguageButton = () => {
-          return React.createElement('a', {
-            href: 'https://spellingbee-portal.vercel.app/',
-            className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-yellow-400 border-opacity-40 hover:bg-yellow-400 hover:text-black transition-all flex items-center justify-center text-yellow-400 hover:border-yellow-400 flex-shrink-0 font-bold text-[11px] px-4 uppercase tracking-wider gap-3',
-            title: 'Sprache ändern',
-            style: { height: '38px' }
-          }, 
-            React.createElement('span', { className: 'text-[1.1rem] flex-shrink-0' }, '🌐'),
-            React.createElement('span', {}, 'Andere Sprache ?')
-          );
-        };
-
-        const EditModeToggleButton = () => {
-          if (!isAdminLogged) return null;
-          return React.createElement('button', {
-            onClick: () => setIsEditMode(!isEditMode),
-            className: 'bg-yellow-400 text-black px-4 py-2 rounded-full font-bold transition-all hover:bg-yellow-300 text-sm flex-shrink-0',
-            title: isEditMode ? 'Bearbeitung beenden' : '✏️ Layout bearbeiten',
-          }, isEditMode ? 'Bearbeitung beenden' : '✏️ Layout bearbeiten');
-        };
-        
-        return React.createElement('nav', { 
-          className: 'floating-nav-capsule relative px-6 py-3',
-          style: { zIndex: 1000 }
-        },
-          React.createElement('div', { className: 'w-full flex justify-between items-center' },
-            React.createElement('div', { className: 'flex items-center gap-3 cursor-pointer', onClick: () => { setGameMode(null); setCurrentScreen('home'); } },
-              React.createElement('div', { className: 'relative w-9 h-9 flex items-center justify-center' },
-                React.createElement('div', {
-                  className: 'absolute inset-0 bg-black border border-yellow-400 border-opacity-70 flex items-center justify-center',
-                  style: {
-                    clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)',
-                    WebkitClipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)'
-                  }
-                },
-                  React.createElement('img', {
-                    src: 'IMG/Abeja.png',
-                    alt: 'Logo Bee',
-                    className: 'w-8 h-8 object-contain filter drop-shadow-[0_2px_8px_rgba(253,224,71,0.45)]'
-                  })
-                )
-              ),
-              React.createElement('div', { className: 'flex flex-col leading-[1.1] text-left animate-fade-in' },
-                React.createElement('span', { className: 'font-black text-[9px] tracking-wider text-slate-300 uppercase' }, "RECHTSCHREIB"),
-                React.createElement('span', { className: 'font-black text-[12px] tracking-widest text-yellow-400 uppercase -mt-0.5' }, "WETTBEWERB")
-              )
-            ),
-            
-            React.createElement('button', {
-              onClick: () => setIsMenüOpen(!isMenüOpen),
-              className: 'md:hidden text-white hover:text-yellow-400 transition-colors duration-300 p-2'
-            },
-              React.createElement('div', { className: 'w-6 h-6 flex flex-col justify-center items-center' },
-                React.createElement('span', {
-                  className: `block w-6 h-0.5 bg-current transition-all duration-300 ${isMenüOpen ? 'rotate-45 translate-y-1.5' : ''}`
-                }),
-                React.createElement('span', {
-                  className: `block w-6 h-0.5 bg-current transition-all duration-300 mt-1 ${isMenüOpen ? 'opacity-0' : ''}`
-                }),
-                React.createElement('span', {
-                  className: `block w-6 h-0.5 bg-current transition-all duration-300 mt-1 ${isMenüOpen ? '-rotate-45 -translate-y-1.5' : ''}`
-                })
-              )
-            ),
-            
-            React.createElement('div', { 
-              id: 'desktop-nav-menu',
-              className: 'hidden md:flex items-center gap-4 lg:gap-6 relative py-2' 
-            },
-              React.createElement('button', {
-                onClick: () => {
-                  setGameMode(null);
-                  setCurrentScreen('home');
-                  setIsMenüOpen(false);
-                },
-                className: getNavLinkClass('home', null, 'card-winners-glow')
-              }, 'Startseite'),
-              React.createElement('button', {
-                onClick: () => {
-                  setGameMode('contest');
-                  setCurrentScreen('menu');
-                  setIsMenüOpen(false);
-                },
-                className: getNavLinkClass('menu', () => gameMode === 'contest', 'card-contest-glow')
-              }, 'Wettbewerb'),
-              React.createElement('button', {
-                onClick: () => {
-                  setGameMode('training');
-                  setCurrentScreen('menu');
-                  setIsMenüOpen(false);
-                },
-                className: getNavLinkClass('menu', () => gameMode === 'training', 'card-training-glow')
-              }, 'Training'),
-              React.createElement('button', {
-                onClick: () => {
-                  setCurrentScreen('instructions');
-                  setIsMenüOpen(false);
-                },
-                className: getNavLinkClass('instructions', null, 'card-instructions-glow')
-              }, 'Anleitung'),
-              React.createElement('button', {
-                onClick: () => {
-                  setCurrentScreen('winners');
-                  setIsMenüOpen(false);
-                },
-                className: getNavLinkClass('winners', null, 'card-winners-glow')
-              }, 'Gewinner'),
-              ThemeToggleButton(),
-              ChangeLanguageButton(),
-              EditModeToggleButton(),
-              React.createElement('button', {
-                onClick: handleAdminAccess,
-                className: 'btn-admin-glass flex items-center gap-3 font-bold px-4'
-              }, 
-                React.createElement('span', { className: 'text-[1rem] flex-shrink-0' }, '⚙️'),
-                React.createElement('span', {}, 'Admin')
-              ),
- 
-              // Dynamic Sliding Indicator
-              React.createElement('div', {
-                className: 'absolute transition-all duration-300 ease-out pointer-events-none',
-                style: {
-                  left: `${indicatorStyle.left}px`,
-                  width: `${indicatorStyle.width}px`,
-                  height: '2.5px',
-                  bottom: '4px',
-                  backgroundColor: indicatorStyle.color,
-                  boxShadow: `0 0 10px ${indicatorStyle.color}, 0 0 18px ${indicatorStyle.color}80`,
-                  borderRadius: '99px',
-                  opacity: indicatorStyle.opacity,
-                  transform: `scaleX(${indicatorStyle.opacity})`,
-                  transitionProperty: 'left, width, background-color, box-shadow, opacity, transform'
-                }
-              },
-                // Dot centered below the line
-                React.createElement('div', {
-                  className: 'absolute left-1/2 -translate-x-1/2 rounded-full transition-all duration-300 ease-out',
-                  style: {
-                    width: '6px',
-                    height: '6px',
-                    bottom: '-10px',
-                    backgroundColor: indicatorStyle.color,
-                    boxShadow: `0 0 8px ${indicatorStyle.color}, 0 0 14px ${indicatorStyle.color}80`,
-                  }
-                })
-              )
-            )
-          ),
-          
-          React.createElement('div', {
-            className: `md:hidden absolute top-full left-0 right-0 bg-black transition-all duration-300 ease-in-out overflow-hidden z-50 ${
-              isMenüOpen ? 'max-h-[500px] opacity-100' : 'max-h-0 opacity-0'
-            }`
-          },
-            React.createElement('div', { className: 'py-4 space-y-2 border-t border-gray-700' },
-              React.createElement('button', {
-                onClick: () => {
-                  setGameMode(null);
-                  setCurrentScreen('home');
-                  setIsMenüOpen(false);
-                },
-                className: `w-full text-left px-4 py-3 rounded-lg font-bold transition-all duration-300 ${
-                  currentScreen === 'home' 
-                    ? 'bg-yellow-400 text-black' 
-                    : 'text-white hover:bg-gray-800 hover:text-yellow-400'
-                }`
-              }, '🏠 Startseite'),
-              React.createElement('button', {
-                onClick: () => {
-                  setGameMode('contest');
-                  setCurrentScreen('menu');
-                  setIsMenüOpen(false);
-                },
-                className: `w-full text-left px-4 py-3 rounded-lg font-bold transition-all duration-300 ${
-                  currentScreen === 'menu' && gameMode === 'contest'
-                    ? 'bg-yellow-400 text-black' 
-                    : 'text-white hover:bg-gray-800 hover:text-yellow-400'
-                }`
-              }, '🏆 Wettbewerb'),
-              React.createElement('button', {
-                onClick: () => {
-                  setGameMode('training');
-                  setCurrentScreen('menu');
-                  setIsMenüOpen(false);
-                },
-                className: `w-full text-left px-4 py-3 rounded-lg font-bold transition-all duration-300 ${
-                  (currentScreen === 'menu' || currentScreen === 'wordList') && gameMode === 'training'
-                    ? 'bg-yellow-400 text-black' 
-                    : 'text-white hover:bg-gray-800 hover:text-yellow-400'
-                }`
-              }, '💪 Training'),
-              React.createElement('button', {
-                onClick: () => {
-                  setCurrentScreen('instructions');
-                  setIsMenüOpen(false);
-                },
-                className: `w-full text-left px-4 py-3 rounded-lg font-bold transition-all duration-300 ${
-                  currentScreen === 'instructions' 
-                    ? 'bg-yellow-400 text-black' 
-                    : 'text-white hover:bg-gray-800 hover:text-yellow-400'
-                }`
-              }, '📖 Anleitung'),
-              React.createElement('button', {
-                onClick: () => {
-                  setCurrentScreen('winners');
-                  setIsMenüOpen(false);
-                },
-                className: `w-full text-left px-4 py-3 rounded-lg font-bold transition-all duration-300 ${
-                  currentScreen === 'winners' 
-                    ? 'bg-yellow-400 text-black' 
-                    : 'text-white hover:bg-gray-800 hover:text-yellow-400'
-                }`
-              }, '🏅 Gewinner'),
-              React.createElement('button', {
-                onClick: handleAdminAccess,
-                className: `w-full text-left px-4 py-3 rounded-lg font-bold transition-all duration-300 ${
-                  currentScreen === 'admin' 
-                    ? 'bg-yellow-400 text-black' 
-                    : 'text-white hover:bg-gray-800 hover:text-yellow-400'
-                }`
-              }, '⚙️ Admin'),
-              React.createElement('a', {
-                href: 'https://spellingbee-portal.vercel.app/',
-                className: 'w-full text-left px-4 py-3 rounded-lg font-bold transition-all duration-300 text-yellow-400 hover:bg-gray-800 hover:text-yellow-300 block border border-dashed border-yellow-400/30 mt-2'
-              }, '🌐 Andere Sprache ?'),
-              React.createElement('div', { className: 'flex flex-col gap-2 px-4 py-2 border-t border-gray-800 mt-2' },
-                React.createElement('div', { className: 'flex justify-center gap-4' },
-                  ThemeToggleButton()
-                ),
-                EditModeToggleButton()
-              )
-            )
-          ),
-          
-          isMenüOpen && React.createElement('div', {
-            className: 'fixed inset-0 bg-black bg-opacity-30 z-30 md:hidden',
-            onClick: () => setIsMenüOpen(false)
-          })
-        );
-      };
 
       // Agregar log para verificar que el componente se renderiza
       console.log('Rendering SpellingBeeGame, currentScreen:', currentScreen);
@@ -3100,7 +3113,22 @@
         currentScreen !== 'home' && React.createElement(StarrySky),
         currentScreen !== 'home' && React.createElement(Fireflies),
         currentScreen !== 'home' && React.createElement(Comets),
-        React.createElement(NavigationBar),
+        React.createElement(NavigationBar, {
+          currentScreen,
+          setCurrentScreen,
+          gameMode,
+          setGameMode,
+          isMenüOpen,
+          setIsMenüOpen,
+          isAdminLogged,
+          setIsAdminLogged,
+          isEditMode,
+          setIsEditMode,
+          themeConfig,
+          setThemeConfig,
+          showThemeModal,
+          setShowThemeModal
+        }),
         React.createElement(ThemeSettingsModal, {
           showThemeModal,
           setShowThemeModal,
