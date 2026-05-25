@@ -6665,7 +6665,6 @@
                 }, '⚙️ Admin'),
                 ThemeToggleButton(),
                 ChangeLanguageButton(),
-                AdminSettingsButton(),
                 EditModeToggleButton()
               )
             )
@@ -6749,8 +6748,7 @@
               }, '🌐 Autre langue ?'),
               React.createElement('div', { className: 'flex flex-col gap-2 px-4 py-2 border-t border-gray-800 mt-2' },
                 React.createElement('div', { className: 'flex justify-center gap-4' },
-                  ThemeToggleButton(),
-                  AdminSettingsButton()
+                  ThemeToggleButton()
                 ),
                 EditModeToggleButton()
               )
