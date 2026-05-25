@@ -412,18 +412,33 @@
     const shouldKeepListeningRef = useRef(false);
 
 
-    // Cargar voces disponibles
+    // Cargar voces disponibles (Integrado con ResponsiveVoice Premium y voces nativas)
     useEffect(() => {
       const loadVoices = () => {
-        const voices = speechSynthesis.getVoices().filter(voice => voice.lang.startsWith('fr'));
-        setAvailableVoices(voices);
-        if (voices.length > 0 && !selectedVoice) {
-          setSelectedVoice(voices[0]);
+        if (window.responsiveVoice && typeof window.responsiveVoice.speak === 'function') {
+          const rvList = [
+            { name: "French Female", lang: "fr-FR", isResponsiveVoice: true },
+            { name: "French Male", lang: "fr-FR", isResponsiveVoice: true }
+          ];
+          setAvailableVoices(rvList);
+          setSelectedVoice(prev => prev || rvList[0]);
+        } else if ('speechSynthesis' in window) {
+          const voices = speechSynthesis.getVoices().filter(voice => voice.lang.startsWith('fr'));
+          setAvailableVoices(voices);
+          if (voices.length > 0) {
+            setSelectedVoice(prev => prev || voices[0]);
+          }
         }
       };
       
       loadVoices();
-      speechSynthesis.onvoiceschanged = loadVoices;
+      if ('speechSynthesis' in window) {
+        speechSynthesis.onvoiceschanged = loadVoices;
+      }
+      
+      // Intentar recargar voces después de 1.5s en caso de que ResponsiveVoice cargue asíncronamente
+      const timer = setTimeout(loadVoices, 1500);
+      return () => clearTimeout(timer);
     }, []);
 
 
@@ -5204,14 +5219,18 @@
       };
 
       const speak = (text) => {
-        if (window.responsiveVoice && typeof window.responsiveVoice.speak === 'function') {
-          responsiveVoice.speak(text, "French Female");
+        if (window.responsiveVoice && typeof window.responsiveVoice.speak === 'function' && selectedVoice && selectedVoice.isResponsiveVoice) {
+          responsiveVoice.speak(text, selectedVoice.name);
         } else if ('speechSynthesis' in window) {
           speechSynthesis.cancel();
           const utterance = new SpeechSynthesisUtterance(text);
           utterance.lang = 'fr-FR';
           if (selectedVoice) {
-            utterance.voice = selectedVoice;
+            if (selectedVoice.isResponsiveVoice) {
+              utterance.lang = selectedVoice.lang;
+            } else {
+              utterance.voice = selectedVoice;
+            }
           }
           speechSynthesis.speak(utterance);
         } else {

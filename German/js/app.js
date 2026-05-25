@@ -354,21 +354,34 @@
       levelC: { name: 'Stufe C (Fortgeschritten)', icon: '👑', words: levelCWords, color: 'bg-purple-500' }
     };
 
-    // Load speech synthesis voices
+    // Load speech synthesis voices (Integrated with ResponsiveVoice Premium and native voices)
     useEffect(() => {
-      if ('speechSynthesis' in window) {
-        const loadVoices = () => {
+      const loadVoices = () => {
+        if (window.responsiveVoice && typeof window.responsiveVoice.speak === 'function') {
+          const rvList = [
+            { name: "Deutsch Female", lang: "de-DE", isResponsiveVoice: true },
+            { name: "Deutsch Male", lang: "de-DE", isResponsiveVoice: true }
+          ];
+          setAvailableVoices(rvList);
+          setSelectedVoice(prev => prev || rvList[0]);
+        } else if ('speechSynthesis' in window) {
           const voices = speechSynthesis.getVoices().filter(voice => voice.lang.startsWith('de'));
           setAvailableVoices(voices);
           if (voices.length > 0) {
-            // Prefer Google Deutsch or high quality German voice
             const preferred = voices.find(v => v.name.includes('Google') || v.name.includes('Premium')) || voices[0];
-            setSelectedVoice(preferred);
+            setSelectedVoice(prev => prev || preferred);
           }
-        };
-        loadVoices();
+        }
+      };
+      
+      loadVoices();
+      if ('speechSynthesis' in window) {
         speechSynthesis.onvoiceschanged = loadVoices;
       }
+      
+      // Retry loading voices in 1.5s in case ResponsiveVoice loads asynchronously
+      const timer = setTimeout(loadVoices, 1500);
+      return () => clearTimeout(timer);
     }, []);
 
     // Speech Recognition initialization
@@ -449,13 +462,21 @@
     }, [gameActive, gameMode, currentWordIndex]);
 
     const speak = (text) => {
-      if (window.responsiveVoice && typeof window.responsiveVoice.speak === 'function') {
-        responsiveVoice.speak(text, "Deutsch Female");
-      } else if ('speechSynthesis' in window && selectedVoice) {
+      if (window.responsiveVoice && typeof window.responsiveVoice.speak === 'function' && selectedVoice && selectedVoice.isResponsiveVoice) {
+        responsiveVoice.speak(text, selectedVoice.name);
+      } else if ('speechSynthesis' in window) {
         speechSynthesis.cancel();
         const utterance = new SpeechSynthesisUtterance(text);
-        utterance.voice = selectedVoice;
-        utterance.lang = 'de-DE';
+        if (selectedVoice) {
+          if (selectedVoice.isResponsiveVoice) {
+            utterance.lang = selectedVoice.lang;
+          } else {
+            utterance.voice = selectedVoice;
+            utterance.lang = 'de-DE';
+          }
+        } else {
+          utterance.lang = 'de-DE';
+        }
         speechSynthesis.speak(utterance);
       } else {
         alert('Sprachsynthese nicht verfügbar.');
