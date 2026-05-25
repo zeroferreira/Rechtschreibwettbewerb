@@ -348,7 +348,7 @@
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05);
   margin: 16px auto 0;
   width: calc(100% - 24px);
-  max-width: 1240px;
+  max-width: 1380px;
   transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 /* Admin Button Glass Capsule */
@@ -765,4 +765,53 @@
   background: rgba(12, 10, 24, 0.35) !important;
   border-color: rgba(255, 255, 255, 0.15) !important;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+/* === MOBILE RESPONSIVE OPTIMIZATIONS === */
+@media (max-width: 1023px) {
+  /* Scale down the container spacing & paddings */
+  .rounded-glass-card {
+    padding: 12px 18px !important;
+    min-height: 80px !important;
+    gap: 12px !important;
+    border-radius: 16px !important;
+  }
+
+  /* Make badge container smaller */
+  .badge-hex {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  /* Make the image inside the badge match the smaller badge size */
+  .badge-hex-img {
+    width: 90px !important;
+    height: 60px !important;
+  }
+
+  /* Scale down the card title so long words (like INSTRUCTIONS, ENTRAÎNEMENT) fit */
+  .card-title-txt {
+    font-size: 1.3rem !important;
+    margin-bottom: 2px !important;
+  }
+
+  /* Scale down description text to wrap nicely */
+  .card-desc-txt {
+    font-size: 0.85rem !important;
+    line-height: 1.25 !important;
+  }
+
+  /* Make the action button more compact to save vertical space */
+  .btn-hero-contest-glass {
+    padding: 12px 24px !important;
+    font-size: 1rem !important;
+    gap: 8px !important;
+  }
+
+  /* Scale down the arrow circle */
+  .arrow-circle {
+    width: 32px !important;
+    height: 32px !important;
+    font-size: 0.95rem !important;
+  }
 }

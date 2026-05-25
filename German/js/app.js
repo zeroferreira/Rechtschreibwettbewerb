@@ -3,13 +3,15 @@
 
   // TransformWrapper Component to handle dragging/scaling in Edit Mode
   const TransformWrapper = ({ id, config, isEditMode, onConfigChange, children, className }) => {
-    const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+    const [windowSize, setWindowSize] = useState({ width: window.innerWidth, height: window.innerHeight });
     useEffect(() => {
-      const handleResize = () => setWindowWidth(window.innerWidth);
+      const handleResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
       window.addEventListener('resize', handleResize);
       return () => window.removeEventListener('resize', handleResize);
     }, []);
 
+    const windowWidth = windowSize.width;
+    const windowHeight = windowSize.height;
     const isDesktop = windowWidth >= 1024;
     const state = config[id] || { x: 0, y: 0, scale: 1 };
     const containerRef = useRef(null);
@@ -102,21 +104,22 @@
 
     if (!isEditMode && isDesktop) {
       const refWidth = 1440;
-      const factor = Math.min(1.8, windowWidth / refWidth);
+      const refHeight = 900;
+      const widthFactor = windowWidth / refWidth;
+      const heightFactor = windowHeight / refHeight;
+      const factor = Math.min(1.8, Math.min(widthFactor, heightFactor));
       displayScale = state.scale * factor;
       displayX = state.x * factor;
 
       if (id === 'bee') {
-        const refHeight = 900;
-        const currentHeight = window.innerHeight;
         const distanceFromBottom = refHeight - state.y;
-        displayY = currentHeight - (distanceFromBottom * factor);
-        displayY = Math.max(state.y * 0.8, Math.min(currentHeight - 150, displayY));
+        displayY = windowHeight - (distanceFromBottom * factor);
+        displayY = Math.max(state.y * 0.8, Math.min(windowHeight - 150, displayY));
       } else {
         displayY = state.y * factor;
       }
 
-      const containerWidth = 1152; // max-w-6xl
+      const containerWidth = 1380; // max-w-[1380px]
       const margin = Math.max(0, (windowWidth - containerWidth) / 2);
 
       if (id === 'hero' && displayX < 0) {
@@ -310,8 +313,19 @@
     const [isListening, setIsListening] = useState(false);
     const [spokenText, setSpokenText] = useState('');
     const [recognition, setRecognition] = useState(null);
+    const [shouldKeepListening, setShouldKeepListening] = useState(false);
+    const [recognitionConfidence, setRecognitionConfidence] = useState(0);
+    const [lastRecognizedText, setLastRecognizedText] = useState('');
+    const [recognitionReady, setRecognitionReady] = useState(false);
     const [showDefinition, setShowDefinition] = useState(false);
     const [showExample, setShowExample] = useState(false);
+
+    const shouldKeepListeningRef = useRef(false);
+    const currentWordRef = useRef(null);
+
+    useEffect(() => {
+      shouldKeepListeningRef.current = shouldKeepListening;
+    }, [shouldKeepListening]);
     
     const inputRef = useRef(null);
     const timerIntervalRef = useRef(null);
@@ -354,6 +368,12 @@
       levelC: { name: 'Stufe C (Fortgeschritten)', icon: '👑', words: levelCWords, color: 'bg-purple-500' }
     };
 
+    const activeWords = selectedLevel ? levels[selectedLevel].words : [];
+    const currentWordObj = (selectedLevel && shuffledIndices.length > 0) ? activeWords[shuffledIndices[currentWordIndex]] : null;
+    useEffect(() => {
+      currentWordRef.current = currentWordObj;
+    }, [currentWordObj]);
+
     // Load speech synthesis voices (Integrated with ResponsiveVoice Premium and native voices)
     useEffect(() => {
       const loadVoices = () => {
@@ -384,53 +404,511 @@
       return () => clearTimeout(timer);
     }, []);
 
-    // Speech Recognition initialization
-    useEffect(() => {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        const rec = new SpeechRecognition();
-        rec.continuous = false;
-        rec.interimResults = false;
-        rec.lang = 'de-DE';
-
-        rec.onstart = () => {
-          setIsListening(true);
-          setSpokenText('');
+    // Configuración optimizada para móviles
+    const optimizeForMobile = () => {
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      if (isMobile) {
+        return {
+          continuous: false,
+          interimResults: true,
+          maxAlternatives: 3,
+          timeouts: { restart: 2000, retry: 3000, error: 1500 }
         };
-
-        rec.onresult = (event) => {
-          const resultText = event.results[0][0].transcript;
-          // Filter out spaces or dots to get spelling characters
-          const cleanedText = resultText.replace(/[\s\.]/g, '').toLowerCase();
-          setSpokenText(resultText);
-          setUserSpelling(cleanedText);
-        };
-
-        rec.onerror = (e) => {
-          console.error('Error de reconocimiento de voz:', e);
-          setIsListening(false);
-        };
-
-        rec.onend = () => {
-          setIsListening(false);
-        };
-
-        setRecognition(rec);
       }
-    }, []);
+      return {
+        continuous: true,
+        interimResults: true,
+        maxAlternatives: 5,
+        timeouts: { restart: 300, retry: 1000, error: 500 }
+      };
+    };
 
-    const toggleListening = () => {
+    // Mapeo de pronunciaciones y comandos alemanes
+    const enhancedGermanLetterMap = {
+      // Letras básicas
+      'a': 'a', 'b': 'b', 'c': 'c', 'd': 'd', 'e': 'e', 'f': 'f', 'g': 'g', 'h': 'h',
+      'i': 'i', 'j': 'j', 'k': 'k', 'l': 'l', 'm': 'm', 'n': 'n', 'o': 'o', 'p': 'p',
+      'q': 'q', 'r': 'r', 's': 's', 't': 't', 'u': 'u', 'v': 'v', 'w': 'w', 'x': 'x',
+      'y': 'y', 'z': 'z', 'ä': 'ä', 'ö': 'ö', 'ü': 'ü', 'ß': 'ß',
+      
+      // Pronunciaciones alemanas comunes
+      'ah': 'a', 'bay': 'b', 'beh': 'b', 'tsay': 'c', 'ceh': 'c', 'day': 'd', 'deh': 'd',
+      'eh': 'e', 'eff': 'f', 'gay': 'g', 'geh': 'g', 'hah': 'h', 'ee': 'i', 'yot': 'j', 'jot': 'j',
+      'kah': 'k', 'ell': 'l', 'emm': 'm', 'enn': 'n', 'oh': 'o', 'pay': 'p', 'peh': 'p',
+      'koo': 'q', 'kuh': 'q', 'err': 'r', 'ess': 's', 'tay': 't', 'teh': 't', 'oo': 'u',
+      'fow': 'v', 'vau': 'v', 'vay': 'w', 'weh': 'w', 'iks': 'x', 'üpsilon': 'y', 'ypsilon': 'y',
+      'tset': 'z', 'zet': 'z', 'zett': 'z',
+      
+      // Letras especiales alemanas
+      'umlaut a': 'ä', 'ae': 'ä', 'a umlaut': 'ä',
+      'umlaut o': 'ö', 'oe': 'ö', 'o umlaut': 'ö',
+      'umlaut u': 'ü', 'ue': 'ü', 'u umlaut': 'ü',
+      'eszett': 'ß', 'scharfes s': 'ß', 'beta': 'ß',
+      'umlauta': 'ä', 'aumlaut': 'ä',
+      'umlauto': 'ö', 'oumlaut': 'ö',
+      'umlautu': 'ü', 'uumlaut': 'ü',
+      'scharfess': 'ß',
+      
+      // Alfabeto fonético NATO en alemán
+      'anton': 'a', 'berta': 'b', 'cäsar': 'c', 'dora': 'd', 'emil': 'e',
+      'friedrich': 'f', 'gustav': 'g', 'heinrich': 'h', 'ida': 'i', 'julius': 'j',
+      'kaufmann': 'k', 'ludwig': 'l', 'martha': 'm', 'nordpol': 'n', 'otto': 'o',
+      'paula': 'p', 'quelle': 'q', 'richard': 'r', 'samuel': 's', 'theodor': 't',
+      'ulrich': 'u', 'viktor': 'v', 'wilhelm': 'w', 'xanthippe': 'x',
+      'ypsilon': 'y', 'zacharias': 'z',
+      
+      // Pronunciaciones inglesas comunes (para compatibilidad)
+      'ay': 'a', 'bee': 'b', 'see': 'c', 'sea': 'c', 'dee': 'd',
+      'gee': 'g', 'aitch': 'h', 'eye': 'i', 'jay': 'j', 'kay': 'k',
+      'el': 'l', 'em': 'm', 'en': 'n', 'pee': 'p', 'cue': 'q',
+      'are': 'r', 'tea': 't', 'you': 'u', 'vee': 'v',
+      'double you': 'w', 'doubleyou': 'w', 'ex': 'x', 'why': 'y', 'zee': 'z', 'zed': 'z',
+      
+      // Alfabeto fonético NATO inglés (para compatibilidad)
+      'alpha': 'a', 'bravo': 'b', 'charlie': 'c', 'delta': 'd', 'echo': 'e',
+      'foxtrot': 'f', 'golf': 'g', 'hotel': 'h', 'india': 'i', 'juliet': 'j',
+      'kilo': 'k', 'lima': 'l', 'mike': 'm', 'november': 'n', 'oscar': 'o',
+      'papa': 'p', 'quebec': 'q', 'romeo': 'r', 'sierra': 's', 'tango': 't',
+      'uniform': 'u', 'victor': 'v', 'whiskey': 'w', 'xray': 'x', 'yankee': 'y', 'zulu': 'z',
+      
+      // Comandos especiales
+      'löschen': 'DELETE', 'loeschen': 'DELETE', 'loschen': 'DELETE',
+      'zurück': 'DELETE', 'zurueck': 'DELETE', 'entfernen': 'DELETE',
+      'leer': 'CLEAR', 'neu': 'CLEAR', 'anfang': 'CLEAR', 'von vorn': 'CLEAR', 'vonvorn': 'CLEAR',
+      'delete': 'DELETE', 'backspace': 'DELETE', 'clear': 'CLEAR', 'reset': 'CLEAR',
+      'groß': 'CAPITAL', 'gross': 'CAPITAL', 'capital': 'CAPITAL'
+    };
+
+    const normalizeForCompare = (text) => {
+      return (text || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[’']/g, '')
+        .replace(/ß/g, 'ss')
+        .replace(/[^a-z]/g, '');
+    };
+
+    // Función para detectar si el input contiene palabras completas en alemán
+    const containsCompleteWords = (transcript) => {
+      const cleaned = (transcript || '')
+        .toLowerCase()
+        .replace(/[’']/g, ' ')
+        .replace(/[^a-zäöüß\s-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (!cleaned) return false;
+
+      const tokens = cleaned
+        .replace(/\bumlaut\s+a\b/g, 'umlauta')
+        .replace(/\ba\s+umlaut\b/g, 'aumlaut')
+        .replace(/\bumlaut\s+o\b/g, 'umlauto')
+        .replace(/\bo\s+umlaut\b/g, 'oumlaut')
+        .replace(/\bumlaut\s+u\b/g, 'umlautu')
+        .replace(/\bu\s+umlaut\b/g, 'uumlaut')
+        .replace(/\bscharfes\s+s\b/g, 'scharfess')
+        .replace(/\bdouble\s+you\b/g, 'doubleyou')
+        .replace(/\bvon\s+vorn\b/g, 'vonvorn')
+        .split(/\s+/)
+        .filter(Boolean);
+
+      // Si es una coincidencia exacta de una sola palabra esperada
+      if (currentWordRef.current && currentWordRef.current.word) {
+        const merged = normalizeForCompare(cleaned);
+        const target = normalizeForCompare(currentWordRef.current.word);
+        const letterishCount = tokens.filter(t => enhancedGermanLetterMap[t] || (t.length === 1 && /[a-zäöüß]/.test(t))).length;
+        if (letterishCount < 2 && merged === target) return true;
+      }
+
+      // Palabras comunes alemanas conversacionales que no son deletreo
+      const commonWords = [
+        'hallo', 'danke', 'ja', 'nein', 'bitte', 'und', 'oder', 'aber', 'nicht',
+        'ich', 'du', 'er', 'sie', 'es', 'wir', 'ihr', 'mein', 'dein', 'sein',
+        'gut', 'schlecht', 'hilfe', 'warum', 'wann', 'wie', 'wo', 'wer', 'was'
+      ];
+
+      for (const token of tokens) {
+        if (token.length >= 4 && !enhancedGermanLetterMap[token] && commonWords.includes(token)) return true;
+      }
+
+      return false;
+    };
+
+    // Función para detectar si el input parece deletreo en alemán
+    const isLikelySpelling = (transcript) => {
+      const cleaned = (transcript || '')
+        .toLowerCase()
+        .replace(/[’']/g, ' ')
+        .replace(/[^a-zäöüß\s-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (!cleaned) return false;
+
+      const tokens = cleaned
+        .replace(/\bumlaut\s+a\b/g, 'umlauta')
+        .replace(/\ba\s+umlaut\b/g, 'aumlaut')
+        .replace(/\bumlaut\s+o\b/g, 'umlauto')
+        .replace(/\bo\s+umlaut\b/g, 'oumlaut')
+        .replace(/\bumlaut\s+u\b/g, 'umlautu')
+        .replace(/\bu\s+umlaut\b/g, 'uumlaut')
+        .replace(/\bscharfes\s+s\b/g, 'scharfess')
+        .replace(/\bdouble\s+you\b/g, 'doubleyou')
+        .replace(/\bvon\s+vorn\b/g, 'vonvorn')
+        .split(/\s+/)
+        .filter(Boolean);
+
+      if (!tokens.length) return false;
+
+      let recognized = 0;
+      let unknownLong = 0;
+      for (const token of tokens) {
+        if (enhancedGermanLetterMap[token] || (token.length === 1 && /[a-zäöüß]/.test(token))) {
+          recognized++;
+        } else if (token.length > 1) {
+          unknownLong++;
+        }
+      }
+
+      if (recognized === 0) return false;
+      if (unknownLong > 0 && recognized / tokens.length < 0.8) return false;
+      return recognized / tokens.length >= 0.6;
+    };
+
+    // Procesar input de voz en alemán
+    const processSpokenInput = (transcript) => {
+      console.log('🔤 Procesando input:', transcript);
+
+      if (containsCompleteWords(transcript)) {
+        console.log('🚫 Input ignorado por contener palabras completas o conversación');
+        return '';
+      }
+      
+      if (!isLikelySpelling(transcript)) {
+        console.log('🚫 No parece deletreo, ignorando:', transcript);
+        return '';
+      }
+
+      const words = (transcript || '')
+        .toLowerCase()
+        .replace(/[’']/g, ' ')
+        .replace(/[^a-zäöüß\s-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .replace(/\bumlaut\s+a\b/g, 'umlauta')
+        .replace(/\ba\s+umlaut\b/g, 'aumlaut')
+        .replace(/\bumlaut\s+o\b/g, 'umlauto')
+        .replace(/\bo\s+umlaut\b/g, 'oumlaut')
+        .replace(/\bumlaut\s+u\b/g, 'umlautu')
+        .replace(/\bu\s+umlaut\b/g, 'uumlaut')
+        .replace(/\bscharfes\s+s\b/g, 'scharfess')
+        .replace(/\bdouble\s+you\b/g, 'doubleyou')
+        .replace(/\bvon\s+vorn\b/g, 'vonvorn')
+        .split(/\s+/)
+        .filter(Boolean);
+
+      let letters = '';
+      let nextUpper = false;
+      
+      for (const word of words) {
+        const cleanWord = word.trim();
+        if (!cleanWord) continue;
+        
+        if (enhancedGermanLetterMap[cleanWord]) {
+          const mappedValue = enhancedGermanLetterMap[cleanWord];
+          if (mappedValue === 'DELETE') return 'DELETE';
+          if (mappedValue === 'CLEAR') return 'CLEAR';
+          if (mappedValue === 'CAPITAL') {
+            nextUpper = true;
+            continue;
+          }
+          
+          let charToAdd = mappedValue;
+          if (nextUpper && charToAdd.length === 1) {
+            charToAdd = charToAdd.toUpperCase();
+            nextUpper = false;
+          }
+          letters += charToAdd;
+          console.log('🔤 Letra detectada:', cleanWord, '->', charToAdd);
+        } else if (cleanWord.length === 1 && /[a-zäöüß]/.test(cleanWord)) {
+          let charToAdd = cleanWord;
+          if (nextUpper) {
+            charToAdd = charToAdd.toUpperCase();
+            nextUpper = false;
+          }
+          letters += charToAdd;
+          console.log('🔤 Letra directa:', cleanWord, '->', charToAdd);
+        }
+      }
+      
+      console.log('🔤 Letras extraídas:', letters);
+      return letters;
+    };
+
+    // Función de reconocimiento con procesamiento inmediato
+    const initSpeechRecognition = () => {
+      // Verificar protocolo
+      if (location.protocol === 'file:') {
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+          alert('⚠️ PROBLEMA DETECTADO:\n\nEl reconocimiento de voz no funciona en móviles cuando abres el archivo directamente.\n\nSOLUCIÓN:\n1. Usa un servidor local o hosting web.');
+          return null;
+        }
+      }
+      
+      if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+        alert('Spracherkennung wird von diesem Browser nicht unterstützt. Verwenden Sie Chrome oder Edge.');
+        return null;
+      }
+      
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      const recognitionInstance = new SpeechRecognition();
+      
+      const config = optimizeForMobile();
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      
+      recognitionInstance.continuous = config.continuous;
+      recognitionInstance.interimResults = config.interimResults;
+      recognitionInstance.lang = 'de-DE';
+      recognitionInstance.maxAlternatives = config.maxAlternatives;
+      
+      if (isMobile) {
+        if (isIOS) {
+          recognitionInstance.maxAlternatives = 1;
+        }
+        
+        try {
+          const grammarList = new (window.SpeechGrammarList || window.webkitSpeechGrammarList)();
+          const alphabet = 'a b c d e f g h i j k l m n o p q r s t u v w x y z ä ö ü ß anton berta cäsar dora emil friedrich gustav heinrich ida julius kaufmann ludwig martha nordpol otto paula quelle richard samuel theodor ulrich viktor wilhelm xanthippe ypsilon zacharias löschen entfernen leer neu anfang vonvorn zurück delete clear';
+          const grammar = '#JSGF V1.0; grammar letters; public <letter> = ' + alphabet + ';';
+          grammarList.addFromString(grammar, 1);
+          recognitionInstance.grammars = grammarList;
+        } catch (e) {
+          console.log('SpeechGrammarList no disponible:', e);
+        }
+      }
+      
+      let isManualStop = false;
+      let lastProcessedLength = 0;
+      
+      recognitionInstance.onstart = () => {
+        console.log('🎤 Reconocimiento INICIADO');
+        setIsListening(true);
+        setRecognitionReady(true);
+        isManualStop = false;
+        lastProcessedLength = 0;
+      };
+      
+      recognitionInstance.onresult = (event) => {
+        console.log('📝 Resultado recibido:', event.results);
+        
+        let interimTranscript = '';
+        let finalTranscript = '';
+        
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          if (event.results[i].isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
+          }
+        }
+        
+        if (event.results[event.results.length - 1]) {
+          const confidence = event.results[event.results.length - 1][0].confidence;
+          setRecognitionConfidence(confidence);
+          setLastRecognizedText(event.results[event.results.length - 1][0].transcript);
+        }
+        
+        if (interimTranscript) {
+          const currentText = interimTranscript.toLowerCase().trim();
+          if (currentText.length > lastProcessedLength) {
+            const newPortion = currentText.substring(lastProcessedLength);
+            const result = processSpokenInput(newPortion);
+            
+            if (result === 'DELETE') {
+              setUserSpelling(prev => prev.slice(0, -1));
+            } else if (result === 'CLEAR') {
+              setUserSpelling('');
+            } else if (result) {
+              setUserSpelling(prev => prev + result);
+            }
+            lastProcessedLength = currentText.length;
+          }
+        }
+        
+        if (finalTranscript) {
+          const currentText = finalTranscript.toLowerCase().trim();
+          if (currentText.length > lastProcessedLength) {
+            const newPortion = currentText.substring(lastProcessedLength);
+            const result = processSpokenInput(newPortion);
+            
+            if (result === 'DELETE') {
+              setUserSpelling(prev => prev.slice(0, -1));
+            } else if (result === 'CLEAR') {
+              setUserSpelling('');
+            } else if (result) {
+              setUserSpelling(prev => prev + result);
+            }
+          }
+          lastProcessedLength = 0;
+        }
+      };
+      
+      recognitionInstance.onerror = (event) => {
+        console.error('❌ Error de reconocimiento:', event.error);
+        const timeouts = optimizeForMobile().timeouts;
+        
+        switch(event.error) {
+          case 'network':
+            if (shouldKeepListeningRef.current && !isManualStop) {
+              setTimeout(() => {
+                try {
+                  recognitionInstance.start();
+                } catch (error) {
+                  console.log('Error al reiniciar después de error de red:', error);
+                }
+              }, timeouts.retry);
+            }
+            break;
+            
+          case 'not-allowed':
+            alert('Acceso al micrófono denegado. Por favor, concede permisos en la configuración de tu navegador.');
+            setShouldKeepListening(false);
+            setIsListening(false);
+            break;
+            
+          case 'no-speech':
+            break;
+            
+          case 'audio-capture':
+            alert('Error de micrófono. Verifica que esté conectado y funcionando.');
+            setShouldKeepListening(false);
+            setIsListening(false);
+            break;
+            
+          case 'aborted':
+            if (shouldKeepListeningRef.current && !isManualStop) {
+              setTimeout(() => {
+                try {
+                  recognitionInstance.start();
+                } catch (error) {
+                  console.log('Error al reiniciar después de abort:', error);
+                }
+              }, timeouts.error);
+            }
+            break;
+            
+          default:
+            if (shouldKeepListeningRef.current && !isManualStop) {
+              setTimeout(() => {
+                try {
+                  recognitionInstance.start();
+                } catch (error) {
+                  console.log('Error al reiniciar después de error desconocido:', error);
+                }
+              }, timeouts.error);
+            }
+        }
+      };
+      
+      recognitionInstance.onend = () => {
+        console.log('🔚 Reconocimiento terminado');
+        if (shouldKeepListeningRef.current && !isManualStop) {
+          const timeouts = optimizeForMobile().timeouts;
+          setTimeout(() => {
+            try {
+              recognitionInstance.start();
+              const lastProcessedLength = 0;
+            } catch (error) {
+              console.log('Error en reinicio automático:', error);
+            }
+          }, timeouts.restart);
+        } else {
+          setIsListening(false);
+          setRecognitionReady(false);
+          const lastProcessedLength = 0;
+        }
+      };
+      
+      recognitionInstance.manualStop = () => {
+        isManualStop = true;
+        setShouldKeepListening(false);
+        const lastProcessedLength = 0;
+        try {
+          recognitionInstance.stop();
+        } catch (error) {
+          console.error('Error al detener manualmente:', error);
+        }
+      };
+      
+      return recognitionInstance;
+    };
+
+    // Cleanup de audio al desmontar
+    useEffect(() => {
+      return () => {
+        if (recognition) {
+          try {
+            recognition.manualStop();
+          } catch (e) {
+            console.error('Error al limpiar reconocimiento:', e);
+          }
+        }
+      };
+    }, [recognition]);
+
+    const toggleListening = async () => {
+      console.log('🔘 Toggle - Estado actual:', isListening);
+      
       if (!recognition) {
-        alert('Spracherkennung wird von diesem Browser nicht unterstützt.');
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          stream.getTracks().forEach(track => track.stop());
+          console.log('✅ Permisos de micrófono concedidos');
+          
+          const newRecognition = initSpeechRecognition();
+          if (newRecognition) {
+            setRecognition(newRecognition);
+            setShouldKeepListening(true);
+            
+            setTimeout(() => {
+              try {
+                newRecognition.start();
+                const lastProcessedLength = 0;
+              } catch (error) {
+                console.error('Error al iniciar reconocimiento:', error);
+              }
+            }, 300);
+          }
+        } catch (error) {
+          alert('Acceso al micrófono denegado. Por favor, concede permisos en la configuración de tu navegador.');
+          console.error('Error de permisos:', error);
+        }
         return;
       }
+      
       if (isListening) {
-        recognition.stop();
+        recognition.manualStop();
       } else {
+        setShouldKeepListening(true);
         try {
           recognition.start();
-        } catch (err) {
-          console.error(err);
+          const lastProcessedLength = 0;
+        } catch (error) {
+          console.error('Error al iniciar reconocimiento:', error);
+          if (error.name === 'InvalidStateError') {
+            try {
+              recognition.stop();
+              setTimeout(() => {
+                recognition.start();
+              }, 500);
+            } catch (e) {
+              console.error('Error en reinicio forzado:', e);
+            }
+          }
         }
       }
     };
@@ -518,6 +996,14 @@
       if (showResult) return;
       if (timerIntervalRef.current) clearInterval(timerIntervalRef.current);
 
+      if (recognition) {
+        try {
+          recognition.manualStop();
+        } catch (e) {
+          console.error('Error al detener reconocimiento de voz:', e);
+        }
+      }
+
       const activeWords = levels[selectedLevel].words;
       const actualIndex = shuffledIndices[currentWordIndex];
       const correctWord = activeWords[actualIndex].word.toLowerCase().trim();
@@ -552,6 +1038,11 @@
         } else {
           // Game Over / End game
           setGameActive(false);
+          if (recognition) {
+            try {
+              recognition.manualStop();
+            } catch (e) {}
+          }
           alert(`Spiel beendet!\nGesamtpunkte: ${score + (correct ? 1 : 0)}\nFehler: ${mistakes + (correct ? 0 : 1)}`);
           setGameMode(null);
           setCurrentScreen('home');
@@ -672,7 +1163,7 @@
 
         // Outer flex layout
         React.createElement('div', { className: 'relative flex-grow flex items-center justify-center px-4 sm:px-8 lg:px-6 pt-4 pb-4 z-10 w-full' },
-          React.createElement('div', { className: 'w-full max-w-6xl flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8' },
+          React.createElement('div', { className: 'w-full max-w-[1380px] flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8' },
             
             // Left Panel: Hero Section (with TransformWrapper)
             React.createElement(TransformWrapper, { id: 'hero', config: layoutConfig, className: 'flex-1 w-full flex justify-center lg:justify-start', isEditMode, onConfigChange: setLayoutConfig },
@@ -813,7 +1304,14 @@
           
           React.createElement('div', { className: 'flex justify-between items-center mb-6 sm:mb-8' },
             React.createElement('button', {
-              onClick: () => { setGameActive(false); setGameMode(null); setCurrentScreen('home'); },
+              onClick: () => { 
+                setGameActive(false); 
+                setGameMode(null); 
+                setCurrentScreen('home'); 
+                if (recognition) {
+                  try { recognition.manualStop(); } catch (e) {}
+                }
+              },
               className: 'bg-black text-yellow-400 p-2 sm:p-3 rounded-full hover:bg-yellow-600 hover:text-black transition-all duration-300 shadow-lg transform hover:scale-110 border border-white/10'
             }, React.createElement(ArrowLeft, { className: 'w-5 h-5 sm:w-6 sm:h-6' })),
             React.createElement('div', { className: 'bg-black/80 text-yellow-400 font-bold px-5 py-2.5 rounded-xl shadow-lg border border-white border-opacity-10' },
@@ -919,6 +1417,29 @@
                     disabled: showResult,
                     className: 'bg-white bg-opacity-10 text-white hover:bg-yellow-500 hover:text-black font-extrabold w-10 h-10 rounded-xl border border-white border-opacity-20 flex items-center justify-center shadow-md transition-all duration-200 text-lg'
                   }, char.toUpperCase())
+                )
+              ),
+
+              // Speech Feedback Overlay
+              isListening && React.createElement('div', { className: 'bg-black bg-opacity-60 border border-white border-opacity-10 rounded-2xl p-4 text-left space-y-2.5 shadow-lg backdrop-blur-md animate-fadeIn mb-3' },
+                React.createElement('div', { className: 'flex items-center gap-2' },
+                  React.createElement('span', { className: 'w-2.5 h-2.5 rounded-full bg-red-500 animate-ping' }),
+                  React.createElement('span', { className: 'text-xs sm:text-sm font-bold text-gray-300' }, 'Zuhören... Bitte buchstabiere jedes Wort deutlich')
+                ),
+                recognitionConfidence > 0 && React.createElement('div', { className: 'space-y-1' },
+                  React.createElement('div', { className: 'w-full bg-white bg-opacity-10 h-1.5 rounded-full overflow-hidden' },
+                    React.createElement('div', { 
+                      className: `h-full rounded-full transition-all duration-300 ${
+                        recognitionConfidence > 0.8 ? 'bg-emerald-500' :
+                        recognitionConfidence > 0.6 ? 'bg-yellow-500' : 'bg-red-500'
+                      }`,
+                      style: { width: `${recognitionConfidence * 100}%` }
+                    })
+                  ),
+                  React.createElement('div', { className: 'flex justify-between text-[10px] text-gray-400 font-bold' },
+                    React.createElement('span', null, `Konfidenz: ${Math.round(recognitionConfidence * 100)}%`),
+                    lastRecognizedText && React.createElement('span', { className: 'italic text-yellow-400 max-w-[70%] truncate' }, `Gehört: "${lastRecognizedText}"`)
+                  )
                 )
               ),
 
@@ -1566,7 +2087,7 @@
           // Menu navigation Links
           React.createElement('div', { 
             id: 'desktop-nav-menu',
-            className: 'hidden md:flex items-center gap-2 sm:gap-4 relative py-2 text-xs font-bold uppercase tracking-widest' 
+            className: 'hidden md:flex items-center gap-3 sm:gap-6 relative py-2 text-xs font-bold uppercase tracking-widest' 
           },
             React.createElement('button', {
               onClick: () => { setGameMode(null); setCurrentScreen('home'); },

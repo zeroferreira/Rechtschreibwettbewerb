@@ -16,14 +16,17 @@
     
     // === DYNAMIC TRANSFORMS WRAPPER (PRECISE COORDINATES SYSTEM) ===
     const TransformWrapper = ({ id, config, isEditMode, onConfigChange, children, className }) => {
-      const [windowWidth, setWindowWidth] = React.useState(window.innerWidth);
+      const [windowSize, setWindowSize] = React.useState({ width: window.innerWidth, height: window.innerHeight });
       React.useEffect(() => {
-        const handleResize = () => setWindowWidth(window.innerWidth);
+        const handleResize = () => setWindowSize({ width: window.innerWidth, height: window.innerHeight });
         window.addEventListener('resize', handleResize);
         return () => window.removeEventListener('resize', handleResize);
       }, []);
 
+      const windowWidth = windowSize.width;
+      const windowHeight = windowSize.height;
       const isDesktop = windowWidth >= 1024;
+
       const state = config[id] || { x: 0, y: 0, scale: 1 };
       const containerRef = React.useRef(null);
       const dragData = React.useRef({ isDragging: false, isScaling: false, startX: 0, startY: 0, startConfig: null });
@@ -115,21 +118,22 @@
 
       if (!isEditMode && isDesktop) {
         const refWidth = 1440;
-        const factor = Math.min(1.8, windowWidth / refWidth);
+        const refHeight = 900;
+        const widthFactor = windowWidth / refWidth;
+        const heightFactor = windowHeight / refHeight;
+        const factor = Math.min(1.8, Math.min(widthFactor, heightFactor));
         displayScale = state.scale * factor;
         displayX = state.x * factor;
 
         if (id === 'bee') {
-          const refHeight = 900;
-          const currentHeight = window.innerHeight;
           const distanceFromBottom = refHeight - state.y;
-          displayY = currentHeight - (distanceFromBottom * factor);
-          displayY = Math.max(state.y * 0.8, Math.min(currentHeight - 150, displayY));
+          displayY = windowHeight - (distanceFromBottom * factor);
+          displayY = Math.max(state.y * 0.8, Math.min(windowHeight - 150, displayY));
         } else {
           displayY = state.y * factor;
         }
 
-        const containerWidth = 1152;
+        const containerWidth = 1380;
         const margin = Math.max(0, (windowWidth - containerWidth) / 2);
 
         if (id === 'hero' && displayX < 0) {
@@ -5425,7 +5429,7 @@
 
           // Central container with Hero text and menu cards
           React.createElement('div', { className: 'relative flex-grow flex items-center justify-center px-4 sm:px-8 lg:px-6 pt-4 pb-4 z-10 w-full' },
-            React.createElement('div', { className: 'w-full max-w-6xl flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8' },
+            React.createElement('div', { className: 'w-full max-w-[1380px] flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8' },
               
               // Left Panel: Hero Section (with TransformWrapper!)
               React.createElement(TransformWrapper, { id: 'hero', config: layoutConfig, className: 'flex-1 w-full flex justify-center lg:justify-start', isEditMode, onConfigChange: setLayoutConfig },
@@ -6657,7 +6661,7 @@
             
             React.createElement('div', { 
               id: 'desktop-nav-menu',
-              className: 'hidden md:flex items-center gap-2 sm:gap-4 relative py-2' 
+              className: 'hidden md:flex items-center gap-3 sm:gap-6 relative py-2' 
             },
               React.createElement('button', {
                 onClick: () => {
