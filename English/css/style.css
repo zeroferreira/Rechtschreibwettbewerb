@@ -513,8 +513,8 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: 190px !important;
-  height: 127px !important;
+  width: 140px !important;
+  height: 93px !important;
   max-width: none !important;
   max-height: none !important;
   object-fit: contain;
