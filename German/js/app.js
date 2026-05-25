@@ -1559,7 +1559,7 @@
         const cardsData = [
           {
             key: 'contest',
-            title: 'CONCOURS',
+            title: 'WETTBEWERB',
             desc: 'Nehmen Sie an echten Wettbewerben teil und testen Sie Ihre Fähigkeiten.',
             img: 'IMG/trofeo.png',
             glowClass: 'card-contest-glow',
