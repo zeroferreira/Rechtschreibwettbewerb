@@ -6481,474 +6481,216 @@
       };
 
       const InstructionsScreen = () => {
-        // Estado para controlar qué sección está expandida (solo una a la vez)
         const [expandedSection, setExpandedSection] = useState(null);
 
-        // Función para alternar el estado de una sección (acordeón)
-        const toggleSection = (section) => {
-          setExpandedSection(prev => prev === section ? null : section);
+        const toggleSection = (sect) => {
+          setExpandedSection(expandedSection === sect ? null : sect);
         };
 
-        return React.createElement('div', { className: 'min-h-screen p-4 sm:p-8' },
-          React.createElement('div', { className: 'max-w-6xl mx-auto' },
-            React.createElement('div', { className: 'flex items-center justify-between mb-6 sm:mb-8' },
-              React.createElement('button', {
-                onClick: () => setCurrentScreen('home'),
-                className: 'bg-black bg-opacity-50 backdrop-blur-md text-yellow-400 p-2 sm:p-3 rounded-full hover:bg-yellow-500 hover:text-black transition-all duration-300 shadow-lg border border-white border-opacity-10'
-              }, React.createElement(ArrowLeft, { className: 'w-5 h-5 sm:w-6 sm:h-6' })),
-              React.createElement('h1', { className: 'text-2xl sm:text-4xl font-bold text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]' }, 'Instructions'),
-              React.createElement('div', { className: 'w-8 sm:w-12' })
+        return React.createElement('div', { className: 'min-h-screen p-4 sm:p-8 flex items-center justify-center' },
+          React.createElement('div', { className: 'max-w-5xl w-full bg-black bg-opacity-40 backdrop-blur-xl rounded-3xl p-6 sm:p-10 shadow-2xl border border-white border-opacity-15 relative min-h-[500px] flex flex-col md:flex-row gap-8 animate-fadeIn' },
+            
+            React.createElement('button', {
+              onClick: () => setCurrentScreen('home'),
+              className: 'absolute top-4 left-4 bg-black text-yellow-400 p-2 sm:p-3 rounded-full hover:bg-yellow-600 hover:text-black transition-all duration-300 shadow-lg transform hover:scale-110 z-10 border border-white/10'
+            }, React.createElement(ArrowLeft, { className: 'w-5 h-5 sm:w-6 sm:h-6' })),
+
+            // Left Panel: Hexagonal badges selector
+            React.createElement('div', { className: 'w-full md:w-48 flex flex-row md:flex-col justify-center items-center gap-4 mt-8 md:mt-0 flex-wrap' },
+              
+              // Hexagon 1: Objective
+              React.createElement('div', { className: 'relative w-20 h-20 sm:w-24 sm:h-24' },
+                React.createElement('button', {
+                  onClick: () => toggleSection('objective'),
+                  className: `absolute inset-0 bg-yellow-400 hover:bg-yellow-300 text-black font-extrabold flex flex-col items-center justify-center shadow-lg transition-all duration-300 border border-yellow-400/20 ${
+                    expandedSection === 'objective' ? 'bg-green-500 text-black border-green-600' : ''
+                  }`,
+                  style: { clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }
+                }, 
+                  React.createElement('div', { className: 'text-2xl mb-1' }, '🎯'),
+                  React.createElement('div', { className: 'text-[10px] font-bold uppercase' }, 'Objective')
+                )
+              ),
+
+              // Hexagon 2: Levels
+              React.createElement('div', { className: 'relative w-20 h-20 sm:w-24 sm:h-24' },
+                React.createElement('button', {
+                  onClick: () => toggleSection('levels'),
+                  className: `absolute inset-0 bg-yellow-400 hover:bg-yellow-300 text-black font-extrabold flex flex-col items-center justify-center shadow-lg transition-all duration-300 border border-yellow-400/20 ${
+                    expandedSection === 'levels' ? 'bg-green-500 text-black border-green-600' : ''
+                  }`,
+                  style: { clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }
+                }, 
+                  React.createElement('div', { className: 'text-2xl mb-1' }, '📚'),
+                  React.createElement('div', { className: 'text-[10px] font-bold uppercase' }, 'Levels')
+                )
+              ),
+
+              // Hexagon 3: Modes
+              React.createElement('div', { className: 'relative w-20 h-20 sm:w-24 sm:h-24' },
+                React.createElement('button', {
+                  onClick: () => toggleSection('modes'),
+                  className: `absolute inset-0 bg-yellow-400 hover:bg-yellow-300 text-black font-extrabold flex flex-col items-center justify-center shadow-lg transition-all duration-300 border border-yellow-400/20 ${
+                    expandedSection === 'modes' ? 'bg-green-500 text-black border-green-600' : ''
+                  }`,
+                  style: { clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }
+                }, 
+                  React.createElement('div', { className: 'text-2xl mb-1' }, '🎮'),
+                  React.createElement('div', { className: 'text-[10px] font-bold uppercase' }, 'Modes')
+                )
+              ),
+
+              // Hexagon 4: How to Play
+              React.createElement('div', { className: 'relative w-20 h-20 sm:w-24 sm:h-24' },
+                React.createElement('button', {
+                  onClick: () => toggleSection('howToPlay'),
+                  className: `absolute inset-0 bg-yellow-400 hover:bg-yellow-300 text-black font-extrabold flex flex-col items-center justify-center shadow-lg transition-all duration-300 border border-yellow-400/20 ${
+                    expandedSection === 'howToPlay' ? 'bg-green-500 text-black border-green-600' : ''
+                  }`,
+                  style: { clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }
+                }, 
+                  React.createElement('div', { className: 'text-2xl mb-1' }, '🎲'),
+                  React.createElement('div', { className: 'text-[10px] font-bold uppercase' }, 'Rules')
+                )
+              ),
+
+              // Hexagon 5: Features
+              React.createElement('div', { className: 'relative w-20 h-20 sm:w-24 sm:h-24' },
+                React.createElement('button', {
+                  onClick: () => toggleSection('features'),
+                  className: `absolute inset-0 bg-yellow-400 hover:bg-yellow-300 text-black font-extrabold flex flex-col items-center justify-center shadow-lg transition-all duration-300 border border-yellow-400/20 ${
+                    expandedSection === 'features' ? 'bg-green-500 text-black border-green-600' : ''
+                  }`,
+                  style: { clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)' }
+                }, 
+                  React.createElement('div', { className: 'text-2xl mb-1' }, '🔧'),
+                  React.createElement('div', { className: 'text-[10px] font-bold uppercase' }, 'Features')
+                )
+              )
+
             ),
-            React.createElement('div', { className: 'bg-white rounded-2xl p-4 sm:p-8 shadow-2xl border-4 border-black' },
-              React.createElement('div', { className: 'flex flex-col lg:flex-row gap-4 sm:gap-8' },
-                // Panel izquierdo: Hexágonos en patrón de panal
-                React.createElement('div', { 
-                  className: 'flex-shrink-0 w-full lg:w-auto mx-auto lg:mx-0',
-                  style: {
-                    maxWidth: '350px',
-                    background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-                    borderRadius: '20px',
-                    padding: '30px 20px',
-                    position: 'relative',
-                    border: '3px solid #000'
-                  }
-                },
-                  // Contenedor del panal hexagonal DE ARRIBA
-                  React.createElement('div', {
-                    style: {
-                      display: 'flex',
-                      flexDirection: 'column',
-                      alignItems: 'center',
-                      position: 'relative',
-                      gap: '15px' // Reducido para móviles
-                    }
-                  },
-                    // Primera fila: 2 hexágonos (rotados 90 grados con mayor separación) de arriba
-                    React.createElement('div', {
-                      style: {
-                        display: 'flex',
-                        gap: '25px', // Reducido para móviles
-                        justifyContent: 'center'
-                      }
-                    },
-                      // Hexágono 1: Game Objective (rotado)
-                      React.createElement('div', {
-                        style: {
-                          position: 'relative',
-                          width: '85px',
-                          height: '74px',
-                          transform: 'rotate(90deg)'
-                        }
-                      },
-                        // Borde hexagonal (elemento de fondo)
-                        React.createElement('div', {
-                          style: {
-                            position: 'absolute',
-                            top: '-4px',
-                            left: '-4px',
-                            width: '93px',
-                            height: '82px',
-                            background: '#000',
-                            clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
-                            zIndex: 1
-                          }
-                        }),
-                        // Hexágono principal
-                        React.createElement('button', {
-                          onClick: () => toggleSection('objective'),
-                          style: {
-                            position: 'relative',
-                            background: expandedSection === 'objective' ? 
-                              'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 
-                              'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-                            border: 'none',
-                            width: '85px',
-                            height: '74px',
-                            clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.3s ease',
-                            cursor: 'pointer',
-                            zIndex: 2,
-                            boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3), 0 2px 6px rgba(0,0,0,0.2)'
-                          }
-                        },
-                          React.createElement('div', { 
-                            className: 'text-center',
-                            style: { transform: 'rotate(-90deg)' }
-                          },
-                            React.createElement('div', { className: 'text-lg mb-1' }, '🎯'),
-                            React.createElement('div', { className: 'text-xs font-bold text-white' }, 'Objective')
-                          )
-                        )
-                      ),
-                      
-                      // Hexágono 2: Available Levels (rotado)
-                      React.createElement('div', {
-                        style: {
-                          position: 'relative',
-                          width: '85px',
-                          height: '74px',
-                          transform: 'rotate(90deg)'
-                        }
-                      },
-                        // Borde hexagonal (elemento de fondo)
-                        React.createElement('div', {
-                          style: {
-                            position: 'absolute',
-                            top: '-4px',
-                            left: '-4px',
-                            width: '93px',
-                            height: '82px',
-                            background: '#000',
-                            clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
-                            zIndex: 1
-                          }
-                        }),
-                        // Hexágono principal
-                        React.createElement('button', {
-                          onClick: () => toggleSection('levels'),
-                          style: {
-                            position: 'relative',
-                            background: expandedSection === 'levels' ? 
-                              'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 
-                              'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-                            border: 'none',
-                            width: '85px',
-                            height: '74px',
-                            clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.3s ease',
-                            cursor: 'pointer',
-                            zIndex: 2,
-                            boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3), 0 2px 6px rgba(0,0,0,0.2)'
-                          }
-                        },
-                          React.createElement('div', { 
-                            className: 'text-center',
-                            style: { transform: 'rotate(-90deg)' }
-                          },
-                            React.createElement('div', { className: 'text-lg mb-1' }, '📚'),
-                            React.createElement('div', { className: 'text-xs font-bold text-white' }, 'Levels')
-                          )
-                        )
-                      )
-                    ),
-                    
-                    // Segunda fila: 3 hexágonos (con mayor separación)
-                    React.createElement('div', {
-                      style: {
-                        display: 'flex',
-                        gap: '25px', // Reducido para móviles
-                        justifyContent: 'center'
-                      }
-                    },
-                      // Hexágono 3: Game Modes
-                      React.createElement('div', {
-                        style: {
-                          position: 'relative',
-                          width: '85px',
-                          height: '74px'
-                        }
-                      },
-                        // Borde hexagonal (elemento de fondo)
-                        React.createElement('div', {
-                          style: {
-                            position: 'absolute',
-                            top: '-4px',
-                            left: '-4px',
-                            width: '93px',
-                            height: '82px',
-                            background: '#000',
-                            clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
-                            zIndex: 1
-                          }
-                        }),
-                        // Hexágono principal
-                        React.createElement('button', {
-                          onClick: () => toggleSection('modes'),
-                          style: {
-                            position: 'relative',
-                            background: expandedSection === 'modes' ? 
-                              'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 
-                              'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-                            border: 'none',
-                            width: '85px',
-                            height: '74px',
-                            clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.3s ease',
-                            cursor: 'pointer',
-                            zIndex: 2,
-                            boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3), 0 2px 6px rgba(0,0,0,0.2)'
-                          }
-                        },
-                          React.createElement('div', { className: 'text-center' },
-                            React.createElement('div', { className: 'text-lg mb-1' }, '🎮'),
-                            React.createElement('div', { className: 'text-xs font-bold text-white' }, 'Modes')
-                          )
-                        )
-                      ),
-                      
-                      // Hexágono 4: How to Play
-                      React.createElement('div', {
-                        style: {
-                          position: 'relative',
-                          width: '85px',
-                          height: '74px'
-                        }
-                      },
-                        // Borde hexagonal (elemento de fondo)
-                        React.createElement('div', {
-                          style: {
-                            position: 'absolute',
-                            top: '-4px',
-                            left: '-4px',
-                            width: '93px',
-                            height: '82px',
-                            background: '#000',
-                            clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
-                            zIndex: 1
-                          }
-                        }),
-                        // Hexágono principal
-                        React.createElement('button', {
-                          onClick: () => toggleSection('howToPlay'),
-                          style: {
-                            position: 'relative',
-                            background: expandedSection === 'howToPlay' ? 
-                              'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 
-                              'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-                            border: 'none',
-                            width: '85px',
-                            height: '74px',
-                            clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.3s ease',
-                            cursor: 'pointer',
-                            zIndex: 2,
-                            boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3), 0 2px 6px rgba(0,0,0,0.2)'
-                          }
-                        },
-                          React.createElement('div', { className: 'text-center' },
-                            React.createElement('div', { className: 'text-lg mb-1' }, '🎲'),
-                            React.createElement('div', { className: 'text-xs font-bold text-white' }, 'How to Play')
-                          )
-                        )
-                      ),
-                      
-                      // Hexágono 5: Features
-                      React.createElement('div', {
-                        style: {
-                          position: 'relative',
-                          width: '85px',
-                          height: '74px'
-                        }
-                      },
-                        // Borde hexagonal (elemento de fondo)
-                        React.createElement('div', {
-                          style: {
-                            position: 'absolute',
-                            top: '-4px',
-                            left: '-4px',
-                            width: '93px',
-                            height: '82px',
-                            background: '#000',
-                            clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
-                            zIndex: 1
-                          }
-                        }),
-                        // Hexágono principal
-                        React.createElement('button', {
-                          onClick: () => toggleSection('features'),
-                          style: {
-                            position: 'relative',
-                            background: expandedSection === 'features' ? 
-                              'linear-gradient(135deg, #10b981 0%, #059669 100%)' : 
-                              'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-                            border: 'none',
-                            width: '85px',
-                            height: '74px',
-                            clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            transition: 'all 0.3s ease',
-                            cursor: 'pointer',
-                            zIndex: 2,
-                            boxShadow: 'inset 0 2px 4px rgba(255,255,255,0.3), 0 2px 6px rgba(0,0,0,0.2)'
-                          }
-                        },
-                          React.createElement('div', { className: 'text-center' },
-                            React.createElement('div', { className: 'text-lg mb-1' }, '🔧'),
-                            React.createElement('div', { className: 'text-xs font-bold text-white' }, 'Features')
-                          )
-                        )
-                      )
-                    )
-                  ),
-                  
-                  // Abejas decorativas
-                  React.createElement('div', {
-                    style: {
-                      position: 'absolute',
-                      top: '10px',
-                      right: '10px',
-                      fontSize: '20px',
-                      animation: 'float 3s ease-in-out infinite'
-                    }
-                  }, '🐝'),
-                  React.createElement('div', {
-                    style: {
-                      position: 'absolute',
-                      bottom: '10px',
-                      left: '10px',
-                      fontSize: '18px',
-                      animation: 'float 3s ease-in-out infinite 1.5s'
-                    }
-                  }, '🐝')
+
+            // Right Panel: Dynamic Content
+            React.createElement('div', { className: 'flex-1 mt-6 md:mt-8' },
+              !expandedSection && React.createElement('div', { className: 'flex items-center justify-center h-full text-center' },
+                React.createElement('div', null,
+                  React.createElement('div', { className: 'text-6xl mb-4 animate-bounce' }, '🐝'),
+                  React.createElement('h3', { className: 'text-2xl font-black text-white mb-2' }, 'Choose a section'),
+                  React.createElement('p', { className: 'text-gray-300 font-semibold' }, 'Click on a hexagon on the left to display its details.')
+                )
+              ),
+
+              expandedSection === 'objective' && React.createElement('div', { className: 'p-6 bg-black bg-opacity-30 rounded-2xl border border-white border-opacity-10 h-full animate-fadeIn' },
+                React.createElement('h3', { className: 'text-2xl sm:text-3xl font-black text-yellow-400 mb-4 flex items-center gap-3' }, 
+                  React.createElement('span', null, '🎯'), 'Game Objective'
                 ),
-                
-                // Panel derecho: Contenido expandido
-                React.createElement('div', { className: 'flex-1 min-h-[400px] lg:min-h-0' },
-                  !expandedSection && React.createElement('div', { className: 'flex items-center justify-center h-full' },
-                    React.createElement('div', { className: 'text-center text-gray-500' },
-                      React.createElement('div', { className: 'text-6xl mb-4' }, '🐝'),
-                      React.createElement('h3', { className: 'text-xl sm:text-2xl font-bold mb-2' }, 'Selecciona una sección'),
-                      React.createElement('p', { className: 'text-base sm:text-lg' }, 'Haz clic en cualquier hexágono para ver su contenido')
+                React.createElement('p', { className: 'text-gray-200 leading-relaxed font-semibold text-base sm:text-lg' },
+                  'Spelling Bee is a game where you must correctly spell English words. Each word comes with its phonetic pronunciation to help you learn it better.'
+                )
+              ),
+
+              expandedSection === 'levels' && React.createElement('div', { className: 'p-6 bg-black bg-opacity-30 rounded-2xl border border-white border-opacity-10 h-full animate-fadeIn' },
+                React.createElement('h3', { className: 'text-2xl sm:text-3xl font-black text-yellow-400 mb-4 flex items-center gap-3' }, 
+                  React.createElement('span', null, '📚'), 'Available Levels'
+                ),
+                React.createElement('ul', { className: 'space-y-4 font-semibold text-gray-200 text-sm sm:text-base' },
+                  React.createElement('li', { className: 'flex items-start p-4 bg-black/40 rounded-xl shadow-md border border-white/10' },
+                    React.createElement('span', { className: 'w-4 h-4 bg-emerald-500 rounded-full mr-3 mt-1' }),
+                    React.createElement('div', null,
+                      React.createElement('strong', { className: 'text-yellow-400' }, 'Level A: '), 'A1, A2, KET - Basic words'
                     )
                   ),
-                  
-                  expandedSection === 'objective' && React.createElement('div', { className: 'p-4 sm:p-6 bg-green-50 rounded-lg border-4 border-green-500 h-full' },
-                    React.createElement('h3', { className: 'text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-green-700 flex items-center' },
-                      React.createElement('span', { className: 'mr-3 text-4xl' }, '🎯'),
-                      'Game Objective'
-                    ),
-                    React.createElement('p', { className: 'text-lg sm:text-xl text-gray-800 leading-relaxed' },
-                      'Spelling Bee is a game where you must correctly spell English words. Each word comes with its phonetic pronunciation to help you learn it better.'
+                  React.createElement('li', { className: 'flex items-start p-4 bg-black/40 rounded-xl shadow-md border border-white/10' },
+                    React.createElement('span', { className: 'w-4 h-4 bg-blue-500 rounded-full mr-3 mt-1' }),
+                    React.createElement('div', null,
+                      React.createElement('strong', { className: 'text-yellow-400' }, 'Level B: '), 'B1, B1+, PET - Intermediate words'
                     )
                   ),
-                  
-                  expandedSection === 'levels' && React.createElement('div', { className: 'p-4 sm:p-6 bg-blue-50 rounded-lg border-4 border-blue-500 h-full' },
-                    React.createElement('h3', { className: 'text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-blue-700 flex items-center' },
-                      React.createElement('span', { className: 'mr-3 text-4xl' }, '📚'),
-                      'Available Levels'
-                    ),
-                    React.createElement('ul', { className: 'space-y-4 text-lg sm:text-xl text-gray-800' },
-                      React.createElement('li', { className: 'flex items-center p-4 bg-white rounded-lg shadow' },
-                        React.createElement('span', { className: 'w-4 h-4 bg-blue-500 rounded-full mr-4' }),
-                        React.createElement('div', null,
-                          React.createElement('strong', { className: 'bg-black text-white px-3 py-1 rounded-lg' }, 'Level A: '),
-                          'A1, A2, KET - Basic words'
-                        )
-                      ),
-                      React.createElement('li', { className: 'flex items-center p-4 bg-white rounded-lg shadow' },
-                        React.createElement('span', { className: 'w-4 h-4 bg-blue-500 rounded-full mr-4' }),
-                        React.createElement('div', null,
-                          React.createElement('strong', { className: 'bg-black text-white px-3 py-1 rounded-lg' }, 'Level B: '),
-                          'B1, B1+, PET - Intermediate words'
-                        )
-                      ),
-                      React.createElement('li', { className: 'flex items-center p-4 bg-white rounded-lg shadow' },
-                        React.createElement('span', { className: 'w-4 h-4 bg-blue-500 rounded-full mr-4' }),
-                        React.createElement('div', null,
-                          React.createElement('strong', { className: 'bg-black text-white px-3 py-1 rounded-lg' }, 'Level C: '),
-                          'B2, C1, C2, FC, CAE - Advanced words'
-                        )
-                      )
+                  React.createElement('li', { className: 'flex items-start p-4 bg-black/40 rounded-xl shadow-md border border-white/10' },
+                    React.createElement('span', { className: 'w-4 h-4 bg-purple-500 rounded-full mr-3 mt-1' }),
+                    React.createElement('div', null,
+                      React.createElement('strong', { className: 'text-yellow-400' }, 'Level C: '), 'B2, C1, C2, FC, CAE - Advanced words'
+                    )
+                  )
+                )
+              ),
+
+              expandedSection === 'modes' && React.createElement('div', { className: 'p-6 bg-black bg-opacity-30 rounded-2xl border border-white border-opacity-10 h-full animate-fadeIn' },
+                React.createElement('h3', { className: 'text-2xl sm:text-3xl font-black text-yellow-400 mb-4 flex items-center gap-3' }, 
+                  React.createElement('span', null, '🎮'), 'Game Modes'
+                ),
+                React.createElement('ul', { className: 'space-y-4 font-semibold text-gray-200 text-sm sm:text-base' },
+                  React.createElement('li', { className: 'flex items-start p-4 bg-black/40 rounded-xl shadow-md border border-white/10' },
+                    React.createElement('span', { className: 'w-4 h-4 bg-emerald-500 rounded-full mr-3 mt-1' }),
+                    React.createElement('div', null,
+                      React.createElement('strong', { className: 'text-yellow-400' }, 'Contest: '), "Play against time with random words"
                     )
                   ),
-                  
-                  expandedSection === 'modes' && React.createElement('div', { className: 'p-4 sm:p-6 bg-purple-50 rounded-lg border-4 border-purple-500 h-full' },
-                    React.createElement('h3', { className: 'text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-purple-700 flex items-center' },
-                      React.createElement('span', { className: 'mr-3 text-4xl' }, '🎮'),
-                      'Game Modes'
-                    ),
-                    React.createElement('ul', { className: 'space-y-4 text-lg sm:text-xl text-gray-800' },
-                      React.createElement('li', { className: 'flex items-center p-4 bg-white rounded-lg shadow' },
-                        React.createElement('span', { className: 'w-4 h-4 bg-purple-500 rounded-full mr-4' }),
-                        React.createElement('div', null,
-                          React.createElement('strong', { className: 'text-purple-700' }, 'Contest: '),
-                          'Play against time with random words'
-                        )
-                      ),
-                      React.createElement('li', { className: 'flex items-center p-4 bg-white rounded-lg shadow' },
-                        React.createElement('span', { className: 'w-4 h-4 bg-purple-500 rounded-full mr-4' }),
-                        React.createElement('div', null,
-                          React.createElement('strong', { className: 'text-purple-700' }, 'Training: '),
-                          'Practice without time pressure'
-                        )
-                      )
+                  React.createElement('li', { className: 'flex items-start p-4 bg-black/40 rounded-xl shadow-md border border-white/10' },
+                    React.createElement('span', { className: 'w-4 h-4 bg-blue-500 rounded-full mr-3 mt-1' }),
+                    React.createElement('div', null,
+                      React.createElement('strong', { className: 'text-yellow-400' }, 'Training: '), "Practice without time pressure"
                     )
+                  )
+                )
+              ),
+
+              expandedSection === 'howToPlay' && React.createElement('div', { className: 'p-6 bg-black bg-opacity-30 rounded-2xl border border-white border-opacity-10 h-full animate-fadeIn overflow-y-auto max-h-[380px]' },
+                React.createElement('h3', { className: 'text-2xl sm:text-3xl font-black text-yellow-400 mb-4 flex items-center gap-3' }, 
+                  React.createElement('span', null, '🎲'), 'How to Play'
+                ),
+                React.createElement('ol', { className: 'space-y-4 font-semibold text-gray-200 text-sm sm:text-base' },
+                  React.createElement('li', { className: 'flex items-start p-3 bg-black/40 rounded-xl border border-white/10' },
+                    React.createElement('span', { className: 'w-6 h-6 bg-yellow-400 text-black rounded-full flex items-center justify-center mr-3 font-bold text-xs mt-0.5' }, '1'),
+                    'Select your difficulty level'
                   ),
-                  
-                  expandedSection === 'howToPlay' && React.createElement('div', { className: 'p-4 sm:p-6 bg-orange-50 rounded-lg border-4 border-orange-500 h-full' },
-                    React.createElement('h3', { className: 'text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-orange-700 flex items-center' },
-                      React.createElement('span', { className: 'mr-3 text-4xl' }, '🎲'),
-                      'How to Play'
-                    ),
-                    React.createElement('ol', { className: 'space-y-4 text-lg sm:text-xl text-gray-800 list-none' },
-                      React.createElement('li', { className: 'flex items-center p-4 bg-white rounded-lg shadow' },
-                        React.createElement('span', { className: 'w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center mr-4 font-bold' }, '1'),
-                        'Select your difficulty level'
-                      ),
-                      React.createElement('li', { className: 'flex items-center p-4 bg-white rounded-lg shadow' },
-                        React.createElement('span', { className: 'w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center mr-4 font-bold' }, '2'),
-                        'Choose between Contest or Training'
-                      ),
-                      React.createElement('li', { className: 'flex items-center p-4 bg-white rounded-lg shadow' },
-                        React.createElement('span', { className: 'w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center mr-4 font-bold' }, '3'),
-                        'Press "Word Selection" to get a random word'
-                      ),
-                      React.createElement('li', { className: 'flex items-center p-4 bg-white rounded-lg shadow' },
-                        React.createElement('span', { className: 'w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center mr-4 font-bold' }, '4'),
-                        'Listen to the pronunciation and observe the phonetics'
-                      ),
-                      React.createElement('li', { className: 'flex items-center p-4 bg-white rounded-lg shadow' },
-                        React.createElement('span', { className: 'w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center mr-4 font-bold' }, '5'),
-                        'Spell the word correctly'
-                      ),
-                      React.createElement('li', { className: 'flex items-center p-4 bg-white rounded-lg shadow' },
-                        React.createElement('span', { className: 'w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center mr-4 font-bold' }, '6'),
-                        'Continue with new words'
-                      )
-                    )
+                  React.createElement('li', { className: 'flex items-start p-3 bg-black/40 rounded-xl border border-white/10' },
+                    React.createElement('span', { className: 'w-6 h-6 bg-yellow-400 text-black rounded-full flex items-center justify-center mr-3 font-bold text-xs mt-0.5' }, '2'),
+                    'Choose between Contest or Training'
                   ),
-                  
-                  expandedSection === 'features' && React.createElement('div', { className: 'p-4 sm:p-6 bg-red-50 rounded-lg border-4 border-red-500 h-full' },
-                    React.createElement('h3', { className: 'text-2xl sm:text-3xl font-bold mb-4 sm:mb-6 text-red-700 flex items-center' },
-                      React.createElement('span', { className: 'mr-3 text-4xl' }, '🔧'),
-                      'Features'
-                    ),
-                    React.createElement('ul', { className: 'space-y-4 text-lg sm:text-xl text-gray-800' },
-                      React.createElement('li', { className: 'flex items-center p-4 bg-white rounded-lg shadow' },
-                        React.createElement('span', { className: 'w-4 h-4 bg-red-500 rounded-full mr-4' }),
-                        'Audio pronunciation for each word'
-                      ),
-                      React.createElement('li', { className: 'flex items-center p-4 bg-white rounded-lg shadow' },
-                        React.createElement('span', { className: 'w-4 h-4 bg-red-500 rounded-full mr-4' }),
-                        'International phonetic notation'
-                      ),
-                      React.createElement('li', { className: 'flex items-center p-4 bg-white rounded-lg shadow' },
-                        React.createElement('span', { className: 'w-4 h-4 bg-red-500 rounded-full mr-4' }),
-                        'Non-repeating word system'
-                      ),
-                      React.createElement('li', { className: 'flex items-center p-4 bg-white rounded-lg shadow' },
-                        React.createElement('span', { className: 'w-4 h-4 bg-red-500 rounded-full mr-4' }),
-                        'Progress counter'
-                      ),
-                      React.createElement('li', { className: 'flex items-center p-4 bg-white rounded-lg shadow' },
-                        React.createElement('span', { className: 'w-4 h-4 bg-red-500 rounded-full mr-4' }),
-                        'Modern and friendly interface'
-                      )
-                    )
+                  React.createElement('li', { className: 'flex items-start p-3 bg-black/40 rounded-xl border border-white/10' },
+                    React.createElement('span', { className: 'w-6 h-6 bg-yellow-400 text-black rounded-full flex items-center justify-center mr-3 font-bold text-xs mt-0.5' }, '3'),
+                    'Press "Word Selection" to get a random word'
+                  ),
+                  React.createElement('li', { className: 'flex items-start p-3 bg-black/40 rounded-xl border border-white/10' },
+                    React.createElement('span', { className: 'w-6 h-6 bg-yellow-400 text-black rounded-full flex items-center justify-center mr-3 font-bold text-xs mt-0.5' }, '4'),
+                    'Listen to the pronunciation and observe the phonetics'
+                  ),
+                  React.createElement('li', { className: 'flex items-start p-3 bg-black/40 rounded-xl border border-white/10' },
+                    React.createElement('span', { className: 'w-6 h-6 bg-yellow-400 text-black rounded-full flex items-center justify-center mr-3 font-bold text-xs mt-0.5' }, '5'),
+                    'Spell the word correctly'
+                  ),
+                  React.createElement('li', { className: 'flex items-start p-3 bg-black/40 rounded-xl border border-white/10' },
+                    React.createElement('span', { className: 'w-6 h-6 bg-yellow-400 text-black rounded-full flex items-center justify-center mr-3 font-bold text-xs mt-0.5' }, '6'),
+                    'Continue with new words'
+                  )
+                )
+              ),
+
+              expandedSection === 'features' && React.createElement('div', { className: 'p-6 bg-black bg-opacity-30 rounded-2xl border border-white border-opacity-10 h-full animate-fadeIn' },
+                React.createElement('h3', { className: 'text-2xl sm:text-3xl font-black text-yellow-400 mb-4 flex items-center gap-3' }, 
+                  React.createElement('span', null, '🔧'), 'Features'
+                ),
+                React.createElement('ul', { className: 'space-y-4 font-semibold text-gray-200 text-sm sm:text-base' },
+                  React.createElement('li', { className: 'flex items-start p-4 bg-black/40 rounded-xl shadow-md border border-white/10' },
+                    React.createElement('span', { className: 'w-4 h-4 bg-red-500 rounded-full mr-3 mt-1' }),
+                    'Audio pronunciation for each word'
+                  ),
+                  React.createElement('li', { className: 'flex items-start p-4 bg-black/40 rounded-xl shadow-md border border-white/10' },
+                    React.createElement('span', { className: 'w-4 h-4 bg-red-500 rounded-full mr-3 mt-1' }),
+                    'International phonetic notation'
+                  ),
+                  React.createElement('li', { className: 'flex items-start p-4 bg-black/40 rounded-xl shadow-md border border-white/10' },
+                    React.createElement('span', { className: 'w-4 h-4 bg-red-500 rounded-full mr-3 mt-1' }),
+                    'Non-repeating word system'
+                  ),
+                  React.createElement('li', { className: 'flex items-start p-4 bg-black/40 rounded-xl shadow-md border border-white/10' },
+                    React.createElement('span', { className: 'w-4 h-4 bg-red-500 rounded-full mr-3 mt-1' }),
+                    'Progress counter'
+                  ),
+                  React.createElement('li', { className: 'flex items-start p-4 bg-black/40 rounded-xl shadow-md border border-white/10' },
+                    React.createElement('span', { className: 'w-4 h-4 bg-red-500 rounded-full mr-3 mt-1' }),
+                    'Modern and friendly interface'
                   )
                 )
               )
