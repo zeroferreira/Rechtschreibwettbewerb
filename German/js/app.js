@@ -1072,7 +1072,7 @@
           level: "Level A",
           winningWord: "Apfel",
           trophy: "🥇",
-          photo: "../English/img/1A.webp"
+          photo: "IMG/1A.webp"
         },
         {
           year: 2024,
@@ -1081,7 +1081,7 @@
           level: "Level B",
           winningWord: "Bleistift",
           trophy: "🥇",
-          photo: "../English/img/2B.jpg"
+          photo: "IMG/2B.jpg"
         },
         {
           year: 2024,
@@ -1090,7 +1090,7 @@
           level: "Level C",
           winningWord: "Gerechtigkeit",
           trophy: "🥇",
-          photo: "../English/img/3C.webp"
+          photo: "IMG/3C.webp"
         },
         {
           year: 2023,
