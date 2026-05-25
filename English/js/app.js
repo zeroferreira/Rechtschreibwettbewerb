@@ -7455,7 +7455,7 @@
       const ThemeToggleButton = () => {
         return React.createElement('button', {
           onClick: toggleTheme,
-          className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-white border-opacity-20 hover:bg-white hover:bg-opacity-20 transition-all ml-2 flex items-center justify-center flex-shrink-0',
+          className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-white border-opacity-20 hover:bg-white hover:bg-opacity-20 transition-all flex items-center justify-center flex-shrink-0',
           title: themeConfig.mode === 'night' ? 'Modo Día' : 'Modo Noche',
           style: { width: '38px', height: '38px', fontSize: '1.1rem' }
         }, themeConfig.mode === 'night' ? '🌙' : '☀️');
@@ -7464,7 +7464,7 @@
       const AdminSettingsButton = () => {
         return React.createElement('button', {
           onClick: () => setShowThemeModal(true),
-          className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-white border-opacity-20 hover:bg-white hover:bg-opacity-20 transition-all ml-2 flex items-center justify-center flex-shrink-0',
+          className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-white border-opacity-20 hover:bg-white hover:bg-opacity-20 transition-all flex items-center justify-center flex-shrink-0',
           title: 'Ajustes Visuales',
           style: { width: '38px', height: '38px', fontSize: '1.1rem' }
         }, '⚙️');
@@ -7473,10 +7473,13 @@
       const ChangeLanguageButton = () => {
         return React.createElement('a', {
           href: 'https://spellingbee-portal.vercel.app/',
-          className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-yellow-400 border-opacity-40 hover:bg-yellow-400 hover:text-black transition-all ml-2 flex items-center justify-center text-yellow-400 hover:border-yellow-400 flex-shrink-0 font-bold text-[11px] px-3 uppercase tracking-wider',
+          className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-yellow-400 border-opacity-40 hover:bg-yellow-400 hover:text-black transition-all flex items-center justify-center text-yellow-400 hover:border-yellow-400 flex-shrink-0 font-bold text-[11px] px-4 uppercase tracking-wider gap-3',
           title: 'Change language',
-          style: { height: '38px', lineHeight: '38px' }
-        }, '🌐 Other language?');
+          style: { height: '38px' }
+        }, 
+          React.createElement('span', { className: 'text-[1.1rem] flex-shrink-0' }, '🌐'),
+          React.createElement('span', {}, 'Other language?')
+        );
       };
 
       const handleAdminAccess = () => {
@@ -7568,7 +7571,7 @@
           // Navigation menu (visible on desktop)
           React.createElement('div', { 
             id: 'desktop-nav-menu',
-            className: 'hidden md:flex items-center gap-3 sm:gap-6 relative py-2' 
+            className: 'hidden md:flex items-center gap-4 lg:gap-6 relative py-2' 
           },
             React.createElement('button', {
               onClick: () => {
@@ -7616,8 +7619,15 @@
                 setIsEditMode(!isEditMode);
                 setCurrentScreen('home');
               },
-              className: 'ml-2 px-3 py-2 bg-yellow-400 text-black font-bold rounded-full hover:bg-yellow-300 transition-colors shadow-lg'
+              className: 'px-4 py-2 bg-yellow-400 text-black font-bold rounded-full hover:bg-yellow-300 transition-all text-sm flex-shrink-0'
             }, isEditMode ? 'Terminar Edición' : '✏️ Editar Layout'),
+            React.createElement('button', {
+              onClick: handleAdminAccess,
+              className: 'btn-admin-glass flex items-center gap-3 font-bold px-4'
+            }, 
+              React.createElement('span', { className: 'text-[1rem] flex-shrink-0' }, '⚙️'),
+              React.createElement('span', {}, 'Admin')
+            ),
 
             // Dynamic Sliding Indicator
             React.createElement('div', {
@@ -7646,17 +7656,6 @@
                   boxShadow: `0 0 8px ${indicatorStyle.color}, 0 0 14px ${indicatorStyle.color}80`,
                 }
               })
-            )
-          ),
-
-          // Admin Button on the right (desktop)
-          React.createElement('div', { className: 'hidden md:block' },
-            React.createElement('button', {
-              onClick: handleAdminAccess,
-              className: 'btn-admin-glass'
-            },
-              React.createElement(GearIcon),
-              React.createElement('span', null, 'Admin')
             )
           )
         ),
