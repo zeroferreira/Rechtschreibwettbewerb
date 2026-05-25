@@ -1502,7 +1502,13 @@
             React.createElement('button', {
               onClick: toggleThemeMode,
               className: 'nav-item-btn-glass p-2 text-base transition-transform duration-300 transform hover:rotate-12 hover:scale-115'
-            }, themeConfig.mode === 'night' ? '🌙' : '☀️')
+            }, themeConfig.mode === 'night' ? '🌙' : '☀️'),
+            
+            // Other language link
+            React.createElement('a', {
+              href: '../index.html',
+              className: 'nav-item-btn-glass px-4 py-2 text-yellow-400 hover:text-black hover:bg-yellow-400 transition-all duration-300 rounded-lg flex items-center gap-1 font-bold text-[11px] tracking-widest uppercase border border-dashed border-yellow-400/30'
+            }, '🌐 Andere Sprache?')
           ),
 
           // Right Actions
@@ -1548,6 +1554,10 @@
             onClick: () => { setCurrentScreen('winners'); setIsMenuOpen(false); },
             className: 'w-full py-2.5 text-center hover:bg-yellow-400 hover:text-black rounded-lg transition-colors'
           }, 'Winners'),
+          React.createElement('a', {
+            href: '../index.html',
+            className: 'w-full py-2.5 text-center hover:bg-yellow-400 hover:text-black rounded-lg transition-colors block border border-dashed border-yellow-400/30 mt-1 text-yellow-400'
+          }, 'Andere Sprache? 🌐'),
           React.createElement('button', {
             onClick: () => { toggleThemeMode(); setIsMenuOpen(false); },
             className: 'w-full py-2.5 text-center hover:bg-yellow-400 hover:text-black rounded-lg transition-colors flex items-center justify-center gap-2'

@@ -7701,6 +7701,15 @@
         }, '⚙️');
       };
 
+      const ChangeLanguageButton = () => {
+        return React.createElement('a', {
+          href: '../index.html',
+          className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-yellow-400 border-opacity-40 hover:bg-yellow-400 hover:text-black transition-all ml-2 flex items-center justify-center text-yellow-400 hover:border-yellow-400 flex-shrink-0 font-bold text-[11px] px-3 uppercase tracking-wider',
+          title: 'Change language',
+          style: { height: '38px', lineHeight: '38px' }
+        }, '🌐 Other language?');
+      };
+
       const handleAdminAccess = () => {
         const pass = prompt("Admin Password:");
         // Simple obfuscation: 1415130* -> MTQxNTEzMCo=
@@ -7831,6 +7840,7 @@
               className: getNavLinkClass('winners', null, 'card-winners-glow')
             }, 'Winners'),
             React.createElement(ThemeToggleButton),
+            React.createElement(ChangeLanguageButton),
             isAdminLogged && React.createElement(AdminSettingsButton),
             isAdminLogged && React.createElement('button', {
               onClick: () => {
@@ -7947,6 +7957,10 @@
                   : 'text-white hover:bg-white hover:bg-opacity-10 hover:text-yellow-400'
               }`
             }, '🏅 Winners'),
+            React.createElement('a', {
+              href: '../index.html',
+              className: 'w-full text-left px-4 py-3 rounded-xl font-bold transition-all duration-300 text-yellow-400 hover:bg-white hover:bg-opacity-10 hover:text-yellow-300 block border border-dashed border-yellow-400/30 mt-2'
+            }, '🌐 Other language?'),
             React.createElement('div', { className: 'py-2 flex gap-4 justify-center items-center' },
               React.createElement(ThemeToggleButton),
               isAdminLogged && React.createElement(AdminSettingsButton)

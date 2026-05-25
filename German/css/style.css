@@ -272,6 +272,7 @@
 
 @media (max-width: 1023px) {
   .spelling-home-bg::after {
+    bottom: -80px; /* Evita saltos/parpadeos en celular al ocultarse la barra de navegación */
     background-position: center center;
     background-size: cover;
     animation: moveUniverseMobile calc(150s / var(--effect-speed)) linear infinite alternate;

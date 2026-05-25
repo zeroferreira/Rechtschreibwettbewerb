@@ -6805,6 +6805,15 @@
           }, '⚙️');
         };
 
+        const ChangeLanguageButton = () => {
+          return React.createElement('a', {
+            href: '../index.html',
+            className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-yellow-400 border-opacity-40 hover:bg-yellow-400 hover:text-black transition-all ml-2 flex items-center justify-center text-yellow-400 hover:border-yellow-400 flex-shrink-0 font-bold text-[11px] px-3 uppercase tracking-wider',
+            title: 'Changer de langue',
+            style: { height: '38px', lineHeight: '38px' }
+          }, '🌐 Autre langue ?');
+        };
+
         const EditModeToggleButton = () => {
           if (!isAdminLogged) return null;
           return React.createElement('button', {
@@ -6912,6 +6921,7 @@
                   }`
                 }, '⚙️ Admin'),
                 ThemeToggleButton(),
+                ChangeLanguageButton(),
                 AdminSettingsButton(),
                 EditModeToggleButton()
               )
@@ -6990,6 +7000,10 @@
                     : 'text-white hover:bg-gray-800 hover:text-yellow-400'
                 }`
               }, '⚙️ Admin'),
+              React.createElement('a', {
+                href: '../index.html',
+                className: 'w-full text-left px-4 py-3 rounded-lg font-bold transition-all duration-300 text-yellow-400 hover:bg-gray-800 hover:text-yellow-300 block border border-dashed border-yellow-400/30 mt-2'
+              }, '🌐 Autre langue ?'),
               React.createElement('div', { className: 'flex flex-col gap-2 px-4 py-2 border-t border-gray-800 mt-2' },
                 React.createElement('div', { className: 'flex justify-center gap-4' },
                   ThemeToggleButton(),
