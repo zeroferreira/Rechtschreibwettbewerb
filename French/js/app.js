@@ -6602,10 +6602,13 @@
         const ChangeLanguageButton = () => {
           return React.createElement('a', {
             href: 'https://spellingbee-portal.vercel.app/',
-            className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-yellow-400 border-opacity-40 hover:bg-yellow-400 hover:text-black transition-all ml-2 flex items-center justify-center text-yellow-400 hover:border-yellow-400 flex-shrink-0 font-bold text-[11px] px-3 uppercase tracking-wider',
+            className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-yellow-400 border-opacity-40 hover:bg-yellow-400 hover:text-black transition-all ml-2 flex items-center justify-center text-yellow-400 hover:border-yellow-400 flex-shrink-0 font-bold text-[11px] px-4 uppercase tracking-wider gap-3',
             title: 'Changer de langue',
-            style: { height: '38px', lineHeight: '38px' }
-          }, '🌐 Autre langue ?');
+            style: { height: '38px' }
+          }, 
+            React.createElement('span', { className: 'text-[1.1rem] flex-shrink-0' }, '🌐'),
+            React.createElement('span', {}, 'Autre langue ?')
+          );
         };
 
         const EditModeToggleButton = () => {
@@ -6622,7 +6625,7 @@
           style: { zIndex: 1000 }
         },
           React.createElement('div', { className: 'w-full flex justify-between items-center' },
-            React.createElement('div', { className: 'flex items-center gap-3 cursor-pointer', onClick: () => { setGameMode(null); setCurrentScreen('home'); } },
+            React.createElement('div', { className: 'flex items-center gap-4 cursor-pointer', onClick: () => { setGameMode(null); setCurrentScreen('home'); } },
               React.createElement('div', { className: 'relative w-9 h-9 flex items-center justify-center' },
                 React.createElement('div', {
                   className: 'absolute inset-0 bg-black border border-yellow-400 border-opacity-70 flex items-center justify-center',
@@ -6739,8 +6742,11 @@
             React.createElement('div', { className: 'hidden md:block' },
               React.createElement('button', {
                 onClick: handleAdminAccess,
-                className: 'btn-admin-glass flex items-center gap-1 font-bold'
-              }, '⚙️ Admin')
+                className: 'btn-admin-glass flex items-center gap-3 font-bold px-4'
+              }, 
+                React.createElement('span', { className: 'text-[1rem] flex-shrink-0' }, '⚙️'),
+                React.createElement('span', {}, 'Admin')
+              )
             )
           ),
           
