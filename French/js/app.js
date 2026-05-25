@@ -5432,16 +5432,16 @@
                 React.createElement('div', { className: 'w-full max-w-md sm:max-w-xl lg:max-w-none mx-auto lg:mx-0 flex flex-col items-center justify-center text-center lg:items-start lg:text-left px-4 sm:px-8 lg:pl-12 xl:pl-20' },
                   React.createElement('span', { className: 'text-xs sm:text-base lg:text-sm font-extrabold tracking-widest text-slate-400 uppercase mb-3 block' }, "BIENVENUE SUR L'APPLICATION OFFICIELLE"),
                   React.createElement('h1', { 
-                    className: 'main-title font-black text-white leading-none tracking-tight text-6xl sm:text-7xl lg:text-[6.5rem] w-full text-center lg:text-left uppercase'
+                    className: 'main-title font-black text-white leading-none tracking-tight text-4xl sm:text-5xl lg:text-[3.5rem] xl:text-[4rem] w-full text-center lg:text-left uppercase'
                   }, "CONCOURS D'"),
                   React.createElement('h1', { 
-                    className: 'main-title font-black text-yellow-400 leading-none tracking-tight mb-2 text-6xl sm:text-8xl lg:text-[7.5rem] flex items-center justify-center lg:justify-start gap-4 w-full uppercase'
+                    className: 'main-title font-black text-yellow-400 leading-none tracking-tight mb-2 text-5xl sm:text-6xl lg:text-[4.5rem] xl:text-[5rem] flex items-center justify-center lg:justify-start gap-4 w-full uppercase'
                   }, 
                     'ORTHOGRAPHE',
                     React.createElement('img', {
                       src: 'IMG/Abeja.png',
                       alt: 'Bee',
-                      className: 'w-20 h-20 sm:w-28 sm:h-28 lg:hidden object-contain animate-bee-wiggle',
+                      className: 'w-16 h-16 sm:w-24 sm:h-24 lg:hidden object-contain animate-bee-wiggle',
                       style: {
                         filter: 'drop-shadow(0 5px 15px rgba(255, 179, 0, 0.35))',
                         opacity: themeConfig.beeOpacity
