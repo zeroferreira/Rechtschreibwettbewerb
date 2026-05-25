@@ -5819,7 +5819,7 @@
             key: 'contest',
             title: 'CONTEST',
             desc: 'Compete in real contests and test your skills.',
-            emoji: '🏆',
+            img: 'img/trofeo.png',
             glowClass: 'card-contest-glow',
             onClick: () => {
               setGameMode('contest');
@@ -5830,7 +5830,7 @@
             key: 'training',
             title: 'TRAINING',
             desc: 'Practice and improve with smart exercises.',
-            emoji: '💪',
+            img: 'img/brazo.png',
             glowClass: 'card-training-glow',
             onClick: () => {
               setGameMode('training');
@@ -5841,7 +5841,7 @@
             key: 'instructions',
             title: 'INSTRUCTIONS',
             desc: 'Learn how to participate and the contest rules.',
-            emoji: '📖',
+            img: 'img/libro.png',
             glowClass: 'card-instructions-glow',
             onClick: () => {
               setCurrentScreen('instructions');
@@ -5851,7 +5851,7 @@
             key: 'winners',
             title: 'WINNERS',
             desc: 'See the leaders and past champions.',
-            emoji: '🏅',
+            img: 'img/medalla.png',
             glowClass: 'card-winners-glow',
             onClick: () => {
               setCurrentScreen('winners');
@@ -5992,7 +5992,11 @@
                       // Badge and info text
                       React.createElement('div', { className: 'flex items-center gap-4 text-left' },
                         React.createElement('div', { className: 'badge-hex' },
-                          React.createElement('span', { className: 'text-2xl' }, card.emoji)
+                          React.createElement('img', {
+                            src: card.img,
+                            alt: card.title,
+                            className: 'badge-hex-img'
+                          })
                         ),
                         React.createElement('div', { className: 'flex flex-col' },
                           React.createElement('span', { className: 'card-title-txt' }, card.title),
