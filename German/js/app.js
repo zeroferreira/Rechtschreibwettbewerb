@@ -1551,7 +1551,7 @@
           }
           return {
             hero: { x: -110, y: -120, scale: 1.15 },
-            cards: { x: 27, y: -95, scale: 1.1 },
+            cards: { x: 27, y: -110, scale: 1.1 },
             bee: { x: 360, y: 380, scale: 0.6 }
           };
         });
