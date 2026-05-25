@@ -280,6 +280,9 @@
     background-position: center center;
     background-size: cover;
     animation: moveUniverseMobile calc(150s / var(--effect-speed)) linear infinite alternate;
+    /* Disable scale transform on mobile to completely prevent WebKit layers collision and missing texts */
+    transform: none !important;
+    will-change: auto;
   }
 }
 
@@ -298,6 +301,10 @@
   font-weight: 900;
   letter-spacing: 0.03em;
   filter: drop-shadow(0 2px 15px rgba(255, 255, 255, 0.05));
+  /* Force GPU rendering to prevent disappearing texts on mobile scrolling */
+  transform: translate3d(0, 0, 0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .nav-item-btn-glass {
