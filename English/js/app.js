@@ -5719,10 +5719,7 @@
 
         if (!isEditMode && isDesktop) {
           const refWidth = 1440;
-          const refHeight = 900;
-          const widthFactor = windowWidth / refWidth;
-          const heightFactor = windowHeight / refHeight;
-          const factor = Math.min(1.8, Math.min(widthFactor, heightFactor));
+          const factor = Math.min(1.8, windowWidth / refWidth);
           displayScale = state.scale * factor;
           displayX = state.x * factor;
 
@@ -5730,6 +5727,7 @@
             // Mantener la abeja flotando cerca del pasto en la parte inferior de la pantalla.
             // En la pantalla de diseño de referencia de 900px de alto, la abeja estaba a 401px del top,
             // por lo que estaba a 499px del fondo (donde está el pasto).
+            const refHeight = 900;
             const distanceFromBottom = refHeight - state.y;
             displayY = windowHeight - (distanceFromBottom * factor);
             // Evitar que suba de más o baje demasiado
@@ -5738,7 +5736,7 @@
             displayY = state.y * factor;
           }
 
-          const containerWidth = 1380; // max-w-[1380px]
+          const containerWidth = 1152; // max-w-6xl
           const margin = Math.max(0, (windowWidth - containerWidth) / 2);
 
           // Evitar que el panel de títulos se corte por la izquierda en pantallas más estrechas
@@ -5811,9 +5809,9 @@
             try { return JSON.parse(scriptEl.textContent); } catch(e){}
           }
           return {
-            hero: { x: 0, y: 0, scale: 1 },
-            cards: { x: 0, y: 0, scale: 1 },
-            bee: { x: 315, y: 401, scale: 1 }
+            hero: { x: -193, y: -135, scale: 1.32 },
+            cards: { x: 27, y: -75, scale: 1.1 },
+            bee: { x: 528, y: 525, scale: 0.6 }
           };
         });
 
@@ -5940,7 +5938,7 @@
 
           // Central container with Hero text and menu cards
           React.createElement('div', { className: 'relative flex-grow flex items-center justify-center px-4 sm:px-8 lg:px-6 pt-4 pb-4 z-10 w-full' },
-            React.createElement('div', { className: 'w-full max-w-[1380px] flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8' },
+            React.createElement('div', { className: 'w-full max-w-6xl flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8' },
               
               // Left Panel: Hero Section
               React.createElement(TransformWrapper, { id: 'hero', config: layoutConfig, className: 'flex-1 w-full flex justify-center lg:justify-start', isEditMode, onConfigChange: setLayoutConfig },

@@ -118,14 +118,12 @@
 
       if (!isEditMode && isDesktop) {
         const refWidth = 1440;
-        const refHeight = 900;
-        const widthFactor = windowWidth / refWidth;
-        const heightFactor = windowHeight / refHeight;
-        const factor = Math.min(1.8, Math.min(widthFactor, heightFactor));
+        const factor = Math.min(1.8, windowWidth / refWidth);
         displayScale = state.scale * factor;
         displayX = state.x * factor;
 
         if (id === 'bee') {
+          const refHeight = 900;
           const distanceFromBottom = refHeight - state.y;
           displayY = windowHeight - (distanceFromBottom * factor);
           displayY = Math.max(state.y * 0.8, Math.min(windowHeight - 150, displayY));
@@ -133,7 +131,7 @@
           displayY = state.y * factor;
         }
 
-        const containerWidth = 1380;
+        const containerWidth = 1152;
         const margin = Math.max(0, (windowWidth - containerWidth) / 2);
 
         if (id === 'hero' && displayX < 0) {
@@ -5429,7 +5427,7 @@
 
           // Central container with Hero text and menu cards
           React.createElement('div', { className: 'relative flex-grow flex items-center justify-center px-4 sm:px-8 lg:px-6 pt-4 pb-4 z-10 w-full' },
-            React.createElement('div', { className: 'w-full max-w-[1380px] flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8' },
+            React.createElement('div', { className: 'w-full max-w-6xl flex flex-col lg:flex-row items-center justify-between gap-12 lg:gap-8' },
               
               // Left Panel: Hero Section (with TransformWrapper!)
               React.createElement(TransformWrapper, { id: 'hero', config: layoutConfig, className: 'flex-1 w-full flex justify-center lg:justify-start', isEditMode, onConfigChange: setLayoutConfig },
