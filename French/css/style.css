@@ -267,6 +267,11 @@
   animation: moveUniverse calc(150s / var(--effect-speed)) linear infinite alternate;
   z-index: -1;
   pointer-events: none;
+  /* GPU hardware acceleration to completely eliminate mobile scroll tick/flicker */
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 @media (max-width: 1023px) {
