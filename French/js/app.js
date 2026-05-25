@@ -6584,7 +6584,7 @@
         const ThemeToggleButton = () => {
           return React.createElement('button', {
             onClick: toggleTheme,
-            className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-white border-opacity-20 hover:bg-white hover:bg-opacity-20 transition-all ml-2 flex items-center justify-center flex-shrink-0',
+            className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-white border-opacity-20 hover:bg-white hover:bg-opacity-20 transition-all flex items-center justify-center flex-shrink-0',
             title: themeConfig.mode === 'night' ? 'Modo Día' : 'Modo Noche',
             style: { width: '38px', height: '38px', fontSize: '1.1rem' }
           }, themeConfig.mode === 'night' ? '🌙' : '☀️');
@@ -6593,7 +6593,7 @@
         const AdminSettingsButton = () => {
           return React.createElement('button', {
             onClick: () => setShowThemeModal(true),
-            className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-white border-opacity-20 hover:bg-white hover:bg-opacity-20 transition-all ml-2 flex items-center justify-center flex-shrink-0',
+            className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-white border-opacity-20 hover:bg-white hover:bg-opacity-20 transition-all flex items-center justify-center flex-shrink-0',
             title: 'Paramètres Visuels',
             style: { width: '38px', height: '38px', fontSize: '1.1rem' }
           }, '⚙️');
@@ -6602,7 +6602,7 @@
         const ChangeLanguageButton = () => {
           return React.createElement('a', {
             href: 'https://spellingbee-portal.vercel.app/',
-            className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-yellow-400 border-opacity-40 hover:bg-yellow-400 hover:text-black transition-all ml-2 flex items-center justify-center text-yellow-400 hover:border-yellow-400 flex-shrink-0 font-bold text-[11px] px-4 uppercase tracking-wider gap-3',
+            className: 'bg-white bg-opacity-10 backdrop-blur-md rounded-full border border-yellow-400 border-opacity-40 hover:bg-yellow-400 hover:text-black transition-all flex items-center justify-center text-yellow-400 hover:border-yellow-400 flex-shrink-0 font-bold text-[11px] px-4 uppercase tracking-wider gap-3',
             title: 'Changer de langue',
             style: { height: '38px' }
           }, 
@@ -6615,7 +6615,7 @@
           if (!isAdminLogged) return null;
           return React.createElement('button', {
             onClick: () => setIsEditMode(!isEditMode),
-            className: 'bg-yellow-400 text-black px-4 py-2 rounded-full font-bold ml-2 transition-all hover:bg-yellow-300 text-sm flex-shrink-0',
+            className: 'bg-yellow-400 text-black px-4 py-2 rounded-full font-bold transition-all hover:bg-yellow-300 text-sm flex-shrink-0',
             title: isEditMode ? 'Terminer Édition' : '✏️ Éditer Layout',
           }, isEditMode ? 'Fin Édition' : '✏️ Éditer Layout');
         };
