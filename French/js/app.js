@@ -6621,11 +6621,11 @@
         };
         
         return React.createElement('nav', { 
-          className: 'floating-nav-capsule relative px-6 py-3',
+          className: 'floating-nav-capsule relative px-8 py-3',
           style: { zIndex: 1000 }
         },
           React.createElement('div', { className: 'w-full flex justify-between items-center' },
-            React.createElement('div', { className: 'flex items-center gap-4 cursor-pointer', onClick: () => { setGameMode(null); setCurrentScreen('home'); } },
+            React.createElement('div', { className: 'flex items-center gap-5 cursor-pointer', onClick: () => { setGameMode(null); setCurrentScreen('home'); } },
               React.createElement('div', { className: 'relative w-9 h-9 flex items-center justify-center' },
                 React.createElement('div', {
                   className: 'absolute inset-0 bg-black border border-yellow-400 border-opacity-70 flex items-center justify-center',
@@ -6666,7 +6666,7 @@
             
             React.createElement('div', { 
               id: 'desktop-nav-menu',
-              className: 'hidden md:flex items-center gap-3 sm:gap-6 relative py-2' 
+              className: 'hidden md:flex items-center gap-4 lg:gap-6 relative py-2' 
             },
               React.createElement('button', {
                 onClick: () => {
@@ -6709,6 +6709,13 @@
               ThemeToggleButton(),
               ChangeLanguageButton(),
               EditModeToggleButton(),
+              React.createElement('button', {
+                onClick: handleAdminAccess,
+                className: 'btn-admin-glass flex items-center gap-3 font-bold px-4'
+              }, 
+                React.createElement('span', { className: 'text-[1rem] flex-shrink-0' }, '⚙️'),
+                React.createElement('span', {}, 'Admin')
+              ),
 
               // Dynamic Sliding Indicator
               React.createElement('div', {
@@ -6737,15 +6744,6 @@
                     boxShadow: `0 0 8px ${indicatorStyle.color}, 0 0 14px ${indicatorStyle.color}80`,
                   }
                 })
-              )
-            ),
-            React.createElement('div', { className: 'hidden md:block' },
-              React.createElement('button', {
-                onClick: handleAdminAccess,
-                className: 'btn-admin-glass flex items-center gap-3 font-bold px-4'
-              }, 
-                React.createElement('span', { className: 'text-[1rem] flex-shrink-0' }, '⚙️'),
-                React.createElement('span', {}, 'Admin')
               )
             )
           ),
