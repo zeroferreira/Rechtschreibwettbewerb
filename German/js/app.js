@@ -102,7 +102,7 @@
 
     if (!isEditMode && isDesktop) {
       const refWidth = 1440;
-      const factor = Math.min(1, windowWidth / refWidth);
+      const factor = Math.min(1.8, windowWidth / refWidth);
       displayScale = state.scale * factor;
       displayX = state.x * factor;
 
