@@ -507,8 +507,8 @@
 
 /* Physical image icon styling inside the hexagon */
 .badge-hex-img {
-  width: 34px;
-  height: 34px;
+  width: 46px;
+  height: 46px;
   object-fit: contain;
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.25));
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
