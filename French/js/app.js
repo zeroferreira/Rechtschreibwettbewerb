@@ -5432,10 +5432,10 @@
                 React.createElement('div', { className: 'w-full max-w-md sm:max-w-xl lg:max-w-none mx-auto lg:mx-0 flex flex-col items-center justify-center text-center lg:items-start lg:text-left px-4 sm:px-8 lg:pl-12 xl:pl-20' },
                   React.createElement('span', { className: 'text-xs sm:text-base lg:text-sm font-extrabold tracking-widest text-slate-400 uppercase mb-3 block' }, "BIENVENUE SUR L'APPLICATION OFFICIELLE"),
                   React.createElement('h1', { 
-                    className: 'main-title font-black text-white leading-none tracking-tight text-3xl sm:text-4xl lg:text-[2.6rem] xl:text-[3.2rem] w-full text-center lg:text-left uppercase'
+                    className: 'main-title font-black text-white leading-none tracking-tight mb-4 text-4xl sm:text-5xl lg:text-[3.2rem] xl:text-[3.8rem] w-full text-center lg:text-left uppercase'
                   }, "CONCOURS D'"),
                   React.createElement('h1', { 
-                    className: 'main-title font-black text-yellow-400 leading-none tracking-tight mb-2 text-3xl sm:text-4xl lg:text-[2.8rem] xl:text-[3.4rem] flex items-center justify-center lg:justify-start gap-4 w-full uppercase'
+                    className: 'main-title font-black text-yellow-400 leading-none tracking-tight mb-4 text-4xl sm:text-5xl lg:text-[3.6rem] xl:text-[4.2rem] flex items-center justify-center lg:justify-start gap-4 w-full uppercase'
                   }, 
                     'ORTHOGRAPHE',
                     React.createElement('img', {
