@@ -161,34 +161,7 @@
       localStorage.setItem('bee_suggestions', JSON.stringify(suggestions));
     }, [suggestions]);
 
-    // Sync state to projector window via BroadcastChannel
-    useEffect(() => {
-      const bc = new BroadcastChannel('spelling_bee_sync');
-      const broadcastState = () => {
-        bc.postMessage({
-          type: 'STATE_UPDATE',
-          currentWord: currentWord,
-          spokenText: spokenText,
-          isListening: isListening,
-          isCorrect: isCorrect,
-          levelName: selectedLevel ? (levels[selectedLevel]?.name || '') : '',
-          usedWordsCount: usedWords.length,
-          totalWordsCount: selectedLevel ? (levels[selectedLevel]?.words.length || 0) : 0
-        });
-      };
-      
-      broadcastState();
-      
-      bc.onmessage = (event) => {
-        if (event.data && event.data.type === 'REQUEST_STATE') {
-          broadcastState();
-        }
-      };
-      
-      return () => {
-        bc.close();
-      };
-    }, [currentWord, spokenText, isListening, isCorrect, selectedLevel, usedWords, levels]);
+
 
     const getFilterThreshold = () => {
       switch(filterSensitivity) {
@@ -5464,6 +5437,35 @@
           color: '#FF8C00'
         }
       };
+
+      // Sync state to projector window via BroadcastChannel
+      useEffect(() => {
+        const bc = new BroadcastChannel('spelling_bee_sync');
+        const broadcastState = () => {
+          bc.postMessage({
+            type: 'STATE_UPDATE',
+            currentWord: currentWord,
+            spokenText: spokenText,
+            isListening: isListening,
+            isCorrect: isCorrect,
+            levelName: selectedLevel ? (levels[selectedLevel]?.name || '') : '',
+            usedWordsCount: usedWords.length,
+            totalWordsCount: selectedLevel ? (levels[selectedLevel]?.words.length || 0) : 0
+          });
+        };
+        
+        broadcastState();
+        
+        bc.onmessage = (event) => {
+          if (event.data && event.data.type === 'REQUEST_STATE') {
+            broadcastState();
+          }
+        };
+        
+        return () => {
+          bc.close();
+        };
+      }, [currentWord, spokenText, isListening, isCorrect, selectedLevel, usedWords]);
 
       //  1. Ve a portal.azure.com → busca "Speech Service" → Crear recurso
       //  2. Elige la región (ej: eastus) y el plan F0 (gratuito)

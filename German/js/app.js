@@ -766,34 +766,7 @@
       localStorage.setItem('bee_de_suggestions', JSON.stringify(suggestions));
     }, [suggestions]);
 
-    // Sync state to projector window via BroadcastChannel
-    useEffect(() => {
-      const bc = new BroadcastChannel('spelling_bee_sync');
-      const broadcastState = () => {
-        bc.postMessage({
-          type: 'STATE_UPDATE',
-          currentWord: currentWord,
-          spokenText: spokenText,
-          isListening: isListening,
-          isCorrect: isCorrect,
-          levelName: selectedLevel ? (levels[selectedLevel]?.name || '') : '',
-          usedWordsCount: usedWords.length,
-          totalWordsCount: selectedLevel ? (levels[selectedLevel]?.words.length || 0) : 0
-        });
-      };
-      
-      broadcastState();
-      
-      bc.onmessage = (event) => {
-        if (event.data && event.data.type === 'REQUEST_STATE') {
-          broadcastState();
-        }
-      };
-      
-      return () => {
-        bc.close();
-      };
-    }, [currentWord, spokenText, isListening, isCorrect, selectedLevel, usedWords, levels]);
+
 
     const getFilterThreshold = () => {
       switch(filterSensitivity) {
@@ -1852,6 +1825,35 @@
         color: '#8B5CF6'
       }
     };
+
+    // Sync state to projector window via BroadcastChannel
+    useEffect(() => {
+      const bc = new BroadcastChannel('spelling_bee_sync');
+      const broadcastState = () => {
+        bc.postMessage({
+          type: 'STATE_UPDATE',
+          currentWord: currentWord,
+          spokenText: spokenText,
+          isListening: isListening,
+          isCorrect: isCorrect,
+          levelName: selectedLevel ? (levels[selectedLevel]?.name || '') : '',
+          usedWordsCount: usedWords.length,
+          totalWordsCount: selectedLevel ? (levels[selectedLevel]?.words.length || 0) : 0
+        });
+      };
+      
+      broadcastState();
+      
+      bc.onmessage = (event) => {
+        if (event.data && event.data.type === 'REQUEST_STATE') {
+          broadcastState();
+        }
+      };
+      
+      return () => {
+        bc.close();
+      };
+    }, [currentWord, spokenText, isListening, isCorrect, selectedLevel, usedWords]);
 
       // ─── Azure TTS – Voces Neurales Microsoft ──────────────────────────────
       // Pasos para activar:
