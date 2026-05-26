@@ -5787,11 +5787,27 @@
         let displayScale = state.scale;
 
         if (!isEditMode && isDesktop) {
-          const refWidth = 1440;
-          const factor = Math.min(1.8, windowWidth / refWidth);
+          const refWidth = config.designedWidth || 1440;
+          const factor = Math.min(1.0, windowWidth / refWidth);
           displayScale = state.scale * factor;
           displayX = state.x * factor;
-          displayY = state.y * factor;
+
+          if (id === 'bee') {
+            // Si la pantalla es más ancha que la pantalla de diseño original,
+            // desplazamos la abeja hacia la derecha para mantenerla perfectamente centrada
+            // con respecto al resto de la interfaz (la cual se centra automáticamente).
+            const extraWidth = windowWidth - refWidth;
+            if (extraWidth > 0) {
+              displayX += extraWidth / 2;
+            }
+
+            const refHeight = 900;
+            const distanceFromBottom = refHeight - state.y;
+            displayY = windowHeight - (distanceFromBottom * factor);
+            displayY = Math.max(state.y * 0.8, Math.min(windowHeight - 150, displayY));
+          } else {
+            displayY = state.y * factor;
+          }
 
           const containerWidth = 1152; // max-w-6xl
           const margin = Math.max(0, (windowWidth - containerWidth) / 2);
@@ -5868,7 +5884,8 @@
           return {
             hero: { x: -193, y: -135, scale: 1.32 },
             cards: { x: 27, y: -110, scale: 1.1 },
-            bee: { x: 528, y: 525, scale: 0.6 }
+            bee: { x: 528, y: 525, scale: 0.6 },
+            designedWidth: 1440
           };
         });
 
@@ -6001,7 +6018,7 @@
               alt: 'Bee',
               className: 'animate-bee-float',
               style: {
-                width: '38vw',
+                width: `${(layoutConfig.designedWidth || 1440) * 0.38}px`,
                 minWidth: '300px',
                 pointerEvents: 'none',
                 filter: 'drop-shadow(0 15px 35px rgba(255, 179, 0, 0.15))',
