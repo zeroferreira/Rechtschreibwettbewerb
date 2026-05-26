@@ -276,10 +276,14 @@
 
 @media (max-width: 1023px) {
   .spelling-home-bg::after {
-    bottom: -100px; /* Evite saltos/parpadeos en celular al ocultarse la barra de navegación */
-    background-position: center top !important; /* Muestra solo la parte de las banderas */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 120vh; /* Bleed area that completely ignores bottom address bar resizing */
+    background-position: right top !important; /* Muestra y fija las banderas en el extremo superior derecho */
     background-size: cover;
-    transform-origin: center top; /* Animación de cercanía estable desde la parte superior */
+    transform-origin: right top; /* La animación de cercanía se expande desde la bandera */
     animation: moveUniverseMobile calc(100s / var(--effect-speed)) ease-in-out infinite alternate;
     will-change: transform;
     -webkit-backface-visibility: hidden;
