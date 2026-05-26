@@ -117,12 +117,20 @@
       let displayScale = state.scale;
 
       if (!isEditMode && isDesktop) {
-        const refWidth = 1440;
-        const factor = Math.min(1.8, windowWidth / refWidth);
+        const refWidth = config.designedWidth || 1440;
+        const factor = Math.min(1.0, windowWidth / refWidth);
         displayScale = state.scale * factor;
         displayX = state.x * factor;
 
         if (id === 'bee') {
+          // Si la pantalla es más ancha que la pantalla de diseño original,
+          // desplazamos la abeja hacia la derecha para mantenerla perfectamente centrada
+          // con respecto al resto de la interfaz (la cual se centra automáticamente).
+          const extraWidth = windowWidth - refWidth;
+          if (extraWidth > 0) {
+            displayX += extraWidth / 2;
+          }
+
           const refHeight = 900;
           const distanceFromBottom = refHeight - state.y;
           displayY = windowHeight - (distanceFromBottom * factor);
@@ -150,7 +158,7 @@
           position: id === 'bee' ? 'absolute' : 'relative',
           ...(id === 'bee' ? { top: 0, left: 0 } : {}),
           transform: `translate(${displayX}px, ${displayY}px) scale(${displayScale})`,
-          transformOrigin: 'top left',
+          transformOrigin: id === 'cards' ? 'top right' : (id === 'bee' ? 'center' : 'top left'),
           zIndex: isEditMode ? 100 : (id === 'bee' ? 0 : 10),
           width: 'max-content',
           height: 'max-content'
@@ -417,7 +425,7 @@
 
         const handleAdminAccess = () => {
           const pass = prompt("Admin-Passwort:");
-          if (pass === atob('MTQxNTEzMA==')) {
+          if (pass === atob('MTQxNTEzMCo=')) {
             setIsAdminLogged(true);
             setCurrentScreen('admin');
             setIsMenüOpen(false);
@@ -773,23 +781,29 @@
     const shouldKeepListeningRef = useRef(false);
 
 
-    // Cargar voces disponibles (Integrado con ResponsiveVoice Premium y voces nativas)
+    // Cargar voces disponibles (Integrado con Voces Premium de Azure, ResponsiveVoice y voces nativas)
     useEffect(() => {
       const loadVoices = () => {
+        const azureList = [
+          { name: "Microsoft Katja (Weiblich)", lang: "de-DE", isAzure: true, azureVoiceName: "de-DE-KatjaNeural" },
+          { name: "Microsoft Amala (Weiblich)", lang: "de-DE", isAzure: true, azureVoiceName: "de-DE-AmalaNeural" },
+          { name: "Microsoft Conrad (Männlich)", lang: "de-DE", isAzure: true, azureVoiceName: "de-DE-ConradNeural" },
+          { name: "Microsoft Bernd (Männlich)", lang: "de-DE", isAzure: true, azureVoiceName: "de-DE-BerndNeural" }
+        ];
+
+        let fallbacks = [];
         if (window.responsiveVoice && typeof window.responsiveVoice.speak === 'function') {
-          const rvList = [
+          fallbacks = [
             { name: "Deutsch Female", lang: "de-DE", isResponsiveVoice: true },
             { name: "Deutsch Male", lang: "de-DE", isResponsiveVoice: true }
           ];
-          setAvailableVoices(rvList);
-          setSelectedVoice(prev => prev || rvList[0]);
         } else if ('speechSynthesis' in window) {
-          const voices = speechSynthesis.getVoices().filter(voice => voice.lang.startsWith('de'));
-          setAvailableVoices(voices);
-          if (voices.length > 0) {
-            setSelectedVoice(prev => prev || voices[0]);
-          }
+          fallbacks = speechSynthesis.getVoices().filter(voice => voice.lang.startsWith('de'));
         }
+        
+        const combined = [...azureList, ...fallbacks];
+        setAvailableVoices(combined);
+        setSelectedVoice(prev => prev || combined[0]);
       };
       
       loadVoices();
@@ -1809,23 +1823,86 @@
       }
     };
 
-      const speak = (text) => {
+      // ─── Azure TTS – Voces Neurales Microsoft ──────────────────────────────
+      // Pasos para activar:
+      //  1. Ve a portal.azure.com → busca "Speech Service" → Crear recurso
+      //  2. Elige la región (ej: eastus) y el plan F0 (gratuito)
+      //  3. En el recurso creado ve a "Claves y punto de conexión"
+      //  4. Copia la KEY 1 y la Región aquí abajo:
+      const AZURE_KEY    = 'CTSSrVM9OcqYGxyh8KmdggxafuqZGjlMVweUoSLhNzShryoEQqqzJQQJ99CEACYeBjFXJ3w3AAAYACOGqrgd';                    // ← Pegar Key 1 aquí
+      const AZURE_REGION = 'eastus';                    // ← Pegar región aquí (ej: 'eastus')
+      const AZURE_VOICE  = 'de-DE-KatjaNeural';  // Voz neural alemana de Microsoft por defecto
+      const AZURE_LANG   = 'de-DE';
+      const _azCache     = {};                    // Caché: misma palabra no se descarga 2 veces
+
+      const _speakFallback = (text) => {
         if (window.responsiveVoice && typeof window.responsiveVoice.speak === 'function' && selectedVoice && selectedVoice.isResponsiveVoice) {
           responsiveVoice.speak(text, selectedVoice.name);
         } else if ('speechSynthesis' in window) {
           speechSynthesis.cancel();
-          const utterance = new SpeechSynthesisUtterance(text);
-          utterance.lang = 'de-DE';
-          if (selectedVoice) {
-            if (selectedVoice.isResponsiveVoice) {
-              utterance.lang = selectedVoice.lang;
-            } else {
-              utterance.voice = selectedVoice;
-            }
-          }
-          speechSynthesis.speak(utterance);
+          const utt = new SpeechSynthesisUtterance(text);
+          utt.lang = AZURE_LANG;
+          if (selectedVoice && !selectedVoice.isResponsiveVoice) utt.voice = selectedVoice;
+          speechSynthesis.speak(utt);
         } else {
-          console.warn('Speech synthesis not available.');
+          console.warn('Sin síntesis de voz disponible.');
+        }
+      };
+
+      const speak = (text) => {
+        const activeVoiceName = selectedVoice && selectedVoice.isAzure ? selectedVoice.azureVoiceName : AZURE_VOICE;
+        const cacheKey = `${text.toLowerCase().trim()}_${activeVoiceName}`;
+
+        if (_azCache[cacheKey]) {
+          new Audio(_azCache[cacheKey]).play().catch(() => _speakFallback(text));
+          return;
+        }
+
+        // Si se seleccionó una voz que NO es de Azure explícitamente, forzar fallback
+        if (selectedVoice && !selectedVoice.isAzure) {
+          _speakFallback(text);
+          return;
+        }
+
+        if (!AZURE_KEY || !AZURE_REGION || !window.SpeechSDK) {
+          _speakFallback(text);
+          return;
+        }
+
+        try {
+          const SpeechSDK = window.SpeechSDK;
+          const speechConfig = SpeechSDK.SpeechConfig.fromSubscription(AZURE_KEY, AZURE_REGION);
+          speechConfig.speechSynthesisVoiceName = activeVoiceName;
+
+          const synthesizer = new SpeechSDK.SpeechSynthesizer(speechConfig, null);
+          synthesizer.speakTextAsync(
+            text,
+            result => {
+              if (result.reason === SpeechSDK.ResultReason.SynthesizingAudioCompleted) {
+                const audioData = result.audioData;
+                if (audioData && audioData.byteLength > 0) {
+                  const blob = new Blob([audioData], { type: 'audio/mp3' });
+                  const url = URL.createObjectURL(blob);
+                  _azCache[cacheKey] = url;
+                  new Audio(url).play().catch(e => console.warn('Reproducción:', e));
+                } else {
+                  _speakFallback(text);
+                }
+              } else {
+                console.warn('SpeechSDK error:', result.errorDetails);
+                _speakFallback(text);
+              }
+              synthesizer.close();
+            },
+            err => {
+              console.warn('SpeechSDK fail:', err);
+              _speakFallback(text);
+              synthesizer.close();
+            }
+          );
+        } catch (e) {
+          console.warn('Azure SDK exception:', e);
+          _speakFallback(text);
         }
       };
 
@@ -1909,9 +1986,10 @@
             try { return JSON.parse(scriptEl.textContent); } catch(e){}
           }
           return {
-            hero: { x: -110, y: -120, scale: 1.15 },
-            cards: { x: 27, y: -110, scale: 1.1 },
-            bee: { x: 360, y: 380, scale: 0.6 }
+            hero: { x: -183, y: -197, scale: 1.3 },
+            cards: { x: 81, y: -112, scale: 1.21 },
+            bee: { x: 354, y: 461, scale: 0.63 },
+            designedWidth: 1512
           };
         });
 
@@ -1961,14 +2039,19 @@
         ];
 
         const saveHTML = async () => {
+          const finalConfig = {
+            ...layoutConfig,
+            designedWidth: window.innerWidth
+          };
+          
           // Update the script tag with current layoutConfig
           const scriptEl = document.getElementById('layout-config-data');
           if (scriptEl) {
-            scriptEl.textContent = '\n      ' + JSON.stringify(layoutConfig, null, 2) + '\n    ';
+            scriptEl.textContent = '\n      ' + JSON.stringify(finalConfig, null, 2) + '\n    ';
           }
           
           // Save locally
-          localStorage.setItem('bee_de_layout_config', JSON.stringify(layoutConfig));
+          localStorage.setItem('bee_de_layout_config', JSON.stringify(finalConfig));
           
           // Trigger file picker or download
           const clone = document.documentElement.cloneNode(true);
@@ -2013,13 +2096,30 @@
           className: 'flex flex-col justify-between min-h-screen relative w-full'
         },
           // Layout Edit Panel
-          isEditMode && React.createElement('div', { className: 'absolute top-24 right-8 bg-black bg-opacity-80 p-4 rounded-xl border border-yellow-400 z-50 text-white shadow-2xl flex flex-col items-center gap-2' },
+          isEditMode && React.createElement('div', { className: 'absolute top-24 right-8 bg-black bg-opacity-90 p-4 rounded-xl border border-yellow-400 z-50 text-white shadow-2xl flex flex-col items-center gap-2', style: { width: '220px' } },
             React.createElement('span', { className: 'font-bold text-yellow-400' }, '✏️ Mode Édition Actif'),
-            React.createElement('span', { className: 'text-xs text-gray-300 mb-2' }, 'Glissez les éléments et utilisez le coin pour redimensionner.'),
+            React.createElement('span', { className: 'text-xs text-gray-300 mb-2 text-center' }, 'Glissez les éléments et utilisez le coin pour redimensionner.'),
             React.createElement('button', {
               onClick: saveHTML,
-              className: 'w-full px-4 py-2 bg-green-500 text-white font-bold rounded hover:bg-green-400 transition-colors'
-            }, '💾 Enregistrer les modif. en HTML')
+              className: 'w-full px-4 py-2 bg-green-500 hover:bg-green-400 text-white font-bold rounded transition-colors text-xs'
+            }, '💾 Télécharger index.html'),
+            React.createElement('span', { className: 'text-[10px] text-yellow-300 font-semibold mt-2 text-center' }, '📋 Copie y pegue esto en nuestro chat:'),
+            React.createElement('textarea', {
+              readOnly: true,
+              value: JSON.stringify({
+                hero: layoutConfig.hero,
+                cards: layoutConfig.cards,
+                bee: layoutConfig.bee,
+                designedWidth: window.innerWidth
+              }, null, 2),
+              onClick: (e) => {
+                e.target.select();
+                document.execCommand('copy');
+                alert('¡Coordenadas copiadas al portapapeles! Pégalas en nuestro chat y las guardaré directamente.');
+              },
+              className: 'w-full h-24 bg-gray-950 text-[10px] font-mono p-2 border border-gray-700 rounded text-green-400 cursor-pointer mt-1 focus:outline-none resize-none',
+              title: 'Haga clic para copiar automáticamente'
+            })
           ),
 
           // 3D Abeille Foreground Layer (with TransformWrapper!)
@@ -2029,7 +2129,7 @@
               alt: 'Bee',
               className: 'animate-bee-float',
               style: {
-                width: '38vw',
+                width: `${(layoutConfig.designedWidth || 1512) * 0.38}px`,
                 minWidth: '300px',
                 pointerEvents: 'none',
                 filter: 'drop-shadow(0 15px 35px rgba(255, 179, 0, 0.15))',
@@ -2117,7 +2217,10 @@
         );
       };
 
-      const MenüScreen = () => React.createElement('div', { className: 'min-h-screen p-4 sm:p-8' },
+      const MenüScreen = () => React.createElement('div', {
+        className: 'min-h-screen p-4 sm:p-8',
+        style: { background: 'radial-gradient(circle at center, #110c26 0%, #05030a 100%)' }
+      },
         React.createElement('div', { className: 'max-w-4xl mx-auto' },
           React.createElement('div', { className: 'flex items-center justify-between mb-6 sm:mb-8' },
             React.createElement('button', {
@@ -2125,30 +2228,31 @@
                 setGameMode(null);
                 setCurrentScreen('home');
               },
-              className: 'bg-yellow-400 text-black p-2 sm:p-3 rounded-full hover:bg-yellow-300 transition-all duration-300 shadow-lg'
+              className: 'bg-white/10 border border-white/20 backdrop-blur-sm text-yellow-400 p-2 sm:p-3 rounded-full hover:bg-yellow-400 hover:text-black transition-all duration-300 shadow-lg'
             }, React.createElement(ArrowLeft, { className: 'w-5 h-5 sm:w-6 sm:h-6' })),
-            React.createElement('h1', { className: 'text-2xl sm:text-4xl font-black text-white text-center drop-shadow-md' }, 'Wählen Sie Ihre Stufe'),
+            React.createElement('h1', { className: 'text-2xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-amber-300 text-center' }, 'Wählen Sie Ihre Stufe'),
             React.createElement('div', { className: 'w-8 sm:w-12' })
           ),
 
           React.createElement('div', { className: 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8' },
             Object.entries(levels).map(([key, level]) =>
               React.createElement('div', { key: key, className: 'relative' },
-                React.createElement('div', { className: 'bg-white rounded-2xl p-4 sm:p-8 shadow-2xl transform hover:scale-105 transition-all duration-300 border-4 border-yellow-400' },
+                React.createElement('div', { 
+                  className: 'bg-white/5 border border-white/10 backdrop-blur-xl rounded-2xl p-4 sm:p-8 shadow-2xl transform hover:scale-105 hover:bg-white/10 hover:border-yellow-400/50 transition-all duration-300'
+                },
                   React.createElement('div', { className: 'text-center mb-4 sm:mb-6' },
                     React.createElement('div', { 
                       className: `rounded-full w-12 h-12 sm:w-16 sm:h-16 mx-auto flex items-center justify-center mb-3 sm:mb-4 shadow-lg ${
-                        gameMode === 'contest' ? 'bg-black text-white' : 'bg-white text-black'
+                        gameMode === 'contest' ? 'bg-yellow-500/20 border border-yellow-400/40 text-yellow-300' : 'bg-white/10 border border-white/20 text-white'
                       }` 
                     },
                       React.createElement('span', { 
-                        className: `text-lg sm:text-2xl font-bold`,
-                        ...(gameMode !== 'contest' && { style: { textShadow: '2px 2px 0 white, -2px -2px 0 white, 2px -2px 0 white, -2px 2px 0 white, 0 2px 0 white, 2px 0 0 white, 0 -2px 0 white, -2px 0 0 white' } })
+                        className: 'text-lg sm:text-2xl font-bold'
                       }, key)
                     ),
                     React.createElement('h2', { 
                       className: `text-xl sm:text-2xl font-bold mb-2 ${
-                        gameMode === 'contest' ? 'text-white bg-black px-4 py-2 rounded-xl' : 'text-black bg-white px-4 py-2 rounded-xl'
+                        gameMode === 'contest' ? 'text-yellow-300' : 'text-white/90'
                       }` 
                     }, level.name),
                     React.createElement('div', { className: 'flex flex-wrap justify-center gap-1 sm:gap-2' },
@@ -2156,7 +2260,7 @@
                         React.createElement('span', {
                           key: index,
                           className: `px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold ${
-                            gameMode === 'contest' ? 'bg-black text-white' : 'bg-white text-black'
+                            gameMode === 'contest' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-400/30' : 'bg-white/10 text-white/80 border border-white/20'
                           }`
                         }, sublevel)
                       )
@@ -2169,7 +2273,7 @@
                         setSelectedLevel(key);
                         setCurrentScreen('game');
                       },
-                      className: 'w-full bg-black text-yellow-400 py-2 sm:py-3 px-4 sm:px-6 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 hover:bg-yellow-400 hover:text-black shadow-lg',
+                      className: 'w-full bg-gradient-to-r from-yellow-400 to-amber-500 text-black py-2 sm:py-3 px-4 sm:px-6 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 hover:from-yellow-500 hover:to-amber-600 shadow-lg hover:scale-[1.02]',
                       disabled: level.words.length === 0
                     }, level.words.length > 0 ? 'Wettbewerb' : 'Bald verfügbar'),
                     gameMode === 'training' && React.createElement('button', {
@@ -2178,7 +2282,7 @@
                         setSelectedLevel(key);
                         setCurrentScreen('game');
                       },
-                      className: 'w-full bg-yellow-400 text-black py-2 sm:py-3 px-4 sm:px-6 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 hover:bg-yellow-300 shadow-lg',
+                      className: 'w-full bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white py-2 sm:py-3 px-4 sm:px-6 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 shadow-lg hover:scale-[1.02]',
                       disabled: level.words.length === 0
                     }, level.words.length > 0 ? 'Training' : 'Bald verfügbar'),
                     gameMode === 'training' && React.createElement('button', {
@@ -2186,12 +2290,12 @@
                         setSelectedLevel(key);
                         setCurrentScreen('wordList');
                       },
-                      className: 'w-full bg-black text-white py-2 sm:py-3 px-4 sm:px-6 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 hover:bg-yellow-600 hover:text-black shadow-lg',
+                      className: 'w-full bg-white/10 border border-white/20 text-white hover:bg-white/20 py-2 sm:py-3 px-4 sm:px-6 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 shadow-lg hover:scale-[1.02]',
                       disabled: level.words.length === 0
                     }, level.words.length > 0 ? 'Wortliste' : 'Bald verfügbar')
                   ),
                   React.createElement('div', { className: 'mt-3 sm:mt-4 text-center' },
-                    React.createElement('span', { className: 'text-black font-semibold text-sm sm:text-base' },
+                    React.createElement('span', { className: 'text-white/50 font-semibold text-sm sm:text-base' },
                       level.words.length + ' Wörter verfügbar'
                     )
                   )
@@ -2206,7 +2310,7 @@
       const renderSpokenTextWithColors = () => {
         if (!currentWord || !spokenText) {
           return React.createElement('div', {
-            className: 'text-base sm:text-lg lg:text-xl font-mono font-bold text-gray-400 text-center py-3'
+            className: 'text-xs font-mono font-extrabold text-white/40 tracking-widest text-center py-3 uppercase'
           }, 'Start spelling...');
         }
 
@@ -2218,16 +2322,16 @@
           const spokenLetter = spoken[i] || '';
           const targetLetter = targetWord[i] || '';
           
-          let letterClass = 'inline-block text-lg sm:text-xl lg:text-2xl font-mono font-bold mx-1 px-2 py-2 rounded-lg transition-all duration-300 ';
+          let letterClass = 'inline-block text-lg sm:text-xl lg:text-2xl font-mono font-extrabold mx-1 px-3 py-2 rounded-xl transition-all duration-300 ';
           
           if (i < spoken.length) {
             if (spokenLetter === targetLetter) {
-              letterClass += 'text-green-700 bg-green-100 border-2 border-green-300';
+              letterClass += 'text-emerald-400 bg-emerald-500/10 border-2 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]';
             } else {
-              letterClass += 'text-red-700 bg-red-100 border-2 border-red-300 animate-pulse';
+              letterClass += 'text-rose-400 bg-rose-500/10 border-2 border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.2)] animate-pulse';
             }
           } else {
-            letterClass += 'text-gray-400 bg-gray-100 border-2 border-gray-200';
+            letterClass += 'text-white/20 bg-white/5 border-2 border-white/10';
           }
 
           letters.push(
@@ -2239,23 +2343,24 @@
         }
 
         return React.createElement('div', {
-          className: 'text-center py-3 sm:py-4 bg-gray-50 rounded-lg border border-gray-200 min-h-[60px] sm:min-h-[70px] flex items-center justify-center flex-wrap gap-1'
+          className: 'text-center py-3 sm:py-4 bg-black/40 rounded-2xl border border-white/10 min-h-[60px] sm:min-h-[70px] flex items-center justify-center flex-wrap gap-1 shadow-inner'
         }, letters);
       };
 
       const GameScreen = () => {
         return React.createElement('div', { className: 'min-h-screen p-4 sm:p-8 flex items-center justify-center' },
           React.createElement('div', { className: 'max-w-4xl w-full mx-auto' },
-            React.createElement('div', { className: 'flex items-center justify-between mb-6 sm:mb-8 bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-white/10 shadow-xl' },
+            // Header con navegación - más compacto y elegante
+            React.createElement('div', { className: 'flex items-center justify-between mb-6 sm:mb-8 bg-white/5 border border-white/10 rounded-2xl p-4 shadow-xl backdrop-blur-md' },
               React.createElement('button', {
                 onClick: () => setCurrentScreen('menu'),
-                className: 'bg-yellow-400 text-black p-2 sm:p-3 rounded-full hover:bg-yellow-300 transition-all duration-300 shadow-lg'
+                className: 'bg-white/5 border border-white/10 text-yellow-400 p-2 sm:p-3 rounded-full hover:bg-yellow-400 hover:text-black transition-all duration-300 shadow-lg transform hover:scale-105'
               }, React.createElement(ArrowLeft, { className: 'w-5 h-5 sm:w-6 sm:h-6' })),
               React.createElement('div', { className: 'text-center flex-1 mx-2 sm:mx-4 text-white' },
-                React.createElement('h1', { className: 'text-lg sm:text-3xl font-black tracking-wide text-yellow-400' },
+                React.createElement('h1', { className: 'text-lg sm:text-3xl font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-yellow-200 via-yellow-400 to-amber-300 uppercase' },
                   `${levels[selectedLevel]?.name} - ${gameMode === 'contest' ? 'Wettbewerb' : 'Training'}`
                 ),
-                React.createElement('p', { className: 'text-sm sm:text-base font-semibold text-gray-300 mt-1' },
+                React.createElement('p', { className: 'text-xs sm:text-sm font-semibold text-slate-300 mt-1 block' },
                   `Verwendete Wörter: ${usedWords.length} / ${levels[selectedLevel]?.words.length}`
                 ),
                 React.createElement('div', { className: 'mt-2' },
@@ -2265,10 +2370,10 @@
                       const voice = availableVoices.find(v => v.name === e.target.value);
                       setSelectedVoice(voice);
                     },
-                    className: 'bg-white text-black px-2 sm:px-3 py-1 rounded border border-gray-300 text-xs sm:text-sm'
+                    className: 'bg-black/60 text-white border border-white/10 px-2 sm:px-3 py-1 rounded-xl text-xs focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 transition-all cursor-pointer'
                   },
                     availableVoices.map(voice =>
-                      React.createElement('option', { key: voice.name, value: voice.name },
+                      React.createElement('option', { key: voice.name, value: voice.name, className: 'bg-slate-900 text-white' },
                         `${voice.name} (${voice.lang})`
                       )
                     )
@@ -2278,28 +2383,28 @@
             ),
             
             React.createElement('div', { className: 'text-center' },
-              React.createElement('div', { className: 'bg-black/40 backdrop-blur-md rounded-2xl p-6 sm:p-12 shadow-2xl border border-white/20 max-w-2xl mx-auto' },
+              React.createElement('div', { className: 'bg-white bg-opacity-5 backdrop-blur-xl border border-white border-opacity-10 rounded-3xl p-6 sm:p-10 shadow-2xl max-w-2xl mx-auto' },
                 isSpinning ?
-                  React.createElement('div', { className: 'animate-spin text-4xl sm:text-6xl font-bold text-black mb-6 sm:mb-8' },
+                  React.createElement('div', { className: 'animate-spin text-5xl sm:text-7xl font-bold text-yellow-400 mb-6 sm:mb-8 filter drop-shadow-[0_0_20px_rgba(250,204,21,0.4)]' },
                     animationStep || '🎲'
                   ) :
                   currentWord ?
-                    React.createElement('div', { className: 'space-y-3' },
+                    React.createElement('div', { className: 'space-y-4' },
                       // Wort und Knöpfe
                       React.createElement('div', { 
-                        className: 'bg-gradient-to-r from-yellow-50 to-amber-50 rounded-xl p-3 sm:p-4 border-2 border-yellow-200' 
+                        className: 'bg-white bg-opacity-5 border border-white border-opacity-5 rounded-2xl p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]' 
                       },
                         React.createElement('div', { className: 'space-y-3' },
                           // Zu buchstabierendes Wort
                           React.createElement('div', { className: 'text-center' },
                             React.createElement('h3', { 
-                              className: 'text-base sm:text-lg font-bold text-black mb-1 sm:mb-2' 
+                              className: 'text-xs font-extrabold uppercase tracking-widest text-slate-400 mb-2 block' 
                             }, 'Zu buchstabierendes Wort:'),
                             React.createElement('div', { 
-                              className: 'text-xl sm:text-2xl lg:text-3xl font-bold text-yellow-600 mb-1' 
+                              className: 'text-3xl sm:text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 mb-1 drop-shadow-[0_0_15px_rgba(34,211,238,0.3)]' 
                             }, currentWord.word),
                             React.createElement('div', { 
-                              className: 'text-xs sm:text-sm lg:text-base text-gray-600 font-mono' 
+                              className: 'text-sm text-yellow-300/80 font-mono tracking-wider font-semibold' 
                             }, currentWord.phonetic || '')
                           ),
                           
@@ -2311,18 +2416,18 @@
                               onClick: () => {
                                 speak(currentWord.word);
                               },
-                              className: 'bg-yellow-400 text-black px-4 py-3 rounded-lg hover:bg-yellow-300 transition-all duration-300 shadow-md flex items-center justify-center gap-2 text-sm font-bold w-full sm:w-auto'
+                              className: 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white px-4 py-2.5 rounded-xl transition-all duration-300 hover:scale-[1.03] shadow-md flex items-center justify-center gap-2 text-xs font-bold w-full sm:w-auto uppercase tracking-wider'
                             }, 
                               React.createElement(Volume2, { className: 'w-4 h-4' }),
                               'Anhören'
                             ),
                             React.createElement('button', {
                               onClick: showWordExample,
-                              className: 'bg-white text-yellow-600 px-4 py-3 rounded-lg hover:bg-yellow-50 transition-all duration-300 shadow-md font-bold text-sm w-full sm:w-auto border-2 border-yellow-500'
+                              className: 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white px-4 py-2.5 rounded-xl transition-all duration-300 hover:scale-[1.03] shadow-md font-bold text-xs w-full sm:w-auto uppercase tracking-wider'
                             }, 'Beispiel'),
                             React.createElement('button', {
                               onClick: showWordDefinition,
-                              className: 'bg-amber-600 text-white px-4 py-3 rounded-lg hover:bg-amber-700 transition-all duration-300 shadow-md font-bold text-sm w-full sm:w-auto'
+                              className: 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white px-4 py-2.5 rounded-xl transition-all duration-300 hover:scale-[1.03] shadow-md font-bold text-xs w-full sm:w-auto uppercase tracking-wider'
                             }, 'Definition')
                           )
                         )
@@ -2330,10 +2435,10 @@
                       
                       // Dein Fortschritt
                       React.createElement('div', { 
-                        className: 'bg-white rounded-xl p-3 sm:p-4 border-2 border-gray-200 mb-6' 
+                        className: 'bg-white bg-opacity-5 border border-white border-opacity-5 rounded-2xl p-3 sm:p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] mb-6' 
                       },
                         React.createElement('h4', { 
-                          className: 'text-sm sm:text-base font-bold text-black mb-2 text-center' 
+                          className: 'text-xs font-extrabold uppercase tracking-widest text-slate-400 mb-2 text-center block' 
                         }, 'Dein Fortschritt:'),
                         renderSpokenTextWithColors()
                       ),
@@ -2343,7 +2448,7 @@
                         React.createElement('div', { className: 'flex flex-col sm:flex-row gap-3 sm:gap-4' },
                           React.createElement('button', {
                             onClick: selectRandomWord,
-                            className: 'bg-yellow-400 text-black py-3 sm:py-4 px-6 sm:px-8 rounded-xl font-bold text-lg sm:text-xl transition-all duration-300 hover:bg-yellow-300 shadow-lg transform hover:scale-105 flex items-center justify-center gap-2 sm:gap-3 flex-1',
+                            className: 'bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-400 hover:from-yellow-500 hover:via-amber-500 hover:to-orange-500 text-black py-3 sm:py-4 px-6 sm:px-8 rounded-2xl font-black text-sm sm:text-base uppercase tracking-wider transition-all duration-300 hover:scale-[1.03] shadow-[0_4px_15px_rgba(245,158,11,0.2)] flex items-center justify-center gap-2 sm:gap-3 flex-1',
                             disabled: isSpinning
                           },
                             React.createElement(Shuffle, { className: 'w-5 h-5 sm:w-6 sm:h-6' }),
@@ -2351,7 +2456,7 @@
                           ),
                           currentWord && React.createElement('button', {
                             onClick: selectRandomWord,
-                            className: 'bg-gradient-to-r from-yellow-400 to-amber-600 text-black py-2 sm:py-3 px-4 sm:px-6 rounded-xl font-bold text-sm sm:text-base transition-all duration-300 hover:from-amber-500 hover:to-yellow-500 shadow-lg transform hover:scale-105 flex-1 border-2 border-white',
+                            className: 'bg-white bg-opacity-10 border border-white border-opacity-10 text-white hover:bg-opacity-20 py-2 sm:py-3 px-4 sm:px-6 rounded-xl font-bold text-xs sm:text-sm uppercase tracking-wider transition-all duration-300 hover:scale-[1.03] shadow-md flex-1',
                             disabled: isSpinning
                           }, '🔄 Neues Wort')
                         )
@@ -2359,38 +2464,38 @@
                       
                       // Spracheingabe
                       React.createElement('div', { 
-                        className: 'bg-gray-50 rounded-xl p-3 sm:p-4 border-2 border-gray-200' 
+                        className: 'bg-white bg-opacity-5 border border-white border-opacity-5 rounded-2xl p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]' 
                       },
                         React.createElement('div', { className: 'space-y-3' },
                           // Sprachsteuerung Knöpfe
                           React.createElement('div', { className: 'flex flex-col sm:flex-row gap-2' },
                             React.createElement('button', {
                               onClick: toggleListening,
-                              className: `flex-1 px-4 py-3 rounded-lg transition-all duration-300 shadow-md flex items-center justify-center gap-2 text-sm font-bold ${
+                              className: `flex-1 px-4 py-2.5 rounded-xl transition-all duration-300 shadow-md flex items-center justify-center gap-2 text-xs font-black uppercase tracking-wider ${
                                 isListening 
-                                  ? 'bg-red-600 text-white hover:bg-red-700 animate-pulse ring-2 ring-red-200' 
-                                  : 'bg-yellow-500 text-black hover:bg-yellow-400'
+                                  ? 'bg-gradient-to-r from-rose-500 to-red-600 text-white animate-pulse ring-4 ring-rose-500/30 shadow-[0_0_20px_rgba(244,63,94,0.4)]' 
+                                  : 'bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white hover:shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:scale-[1.03]'
                               }`
                             }, 
-                              React.createElement('span', { className: 'text-lg' }, 
+                              React.createElement('span', { className: 'text-base' }, 
                                 isListening ? '🛑' : '🎤'
                               ),
                               React.createElement('span', {}, 
-                                isListening ? 'Spracheingabe stoppen' : 'Spracheingabe starten'
+                                isListening ? 'Stoppen' : 'Starten'
                               )
                             ),
                             React.createElement('button', {
                               onClick: clearSpokenText,
-                              className: 'bg-white text-yellow-600 px-4 py-3 rounded-lg hover:bg-yellow-50 transition-all duration-300 shadow-md flex items-center justify-center gap-2 text-sm font-bold w-full sm:w-auto border-2 border-yellow-500'
+                              className: 'bg-white/10 hover:bg-white/20 border border-white/10 text-white px-4 py-2.5 rounded-xl transition-all duration-300 hover:scale-[1.03] shadow-md flex items-center justify-center gap-2 text-xs font-bold w-full sm:w-auto'
                             }, 
-                              React.createElement('span', { className: 'text-base' }, '🗑️'),
+                              React.createElement('span', { className: 'text-sm' }, '🗑️'),
                               'Löschen'
                             ),
                             React.createElement('button', {
                               onClick: showPermissionHelp,
-                              className: 'bg-white text-amber-600 px-4 py-3 rounded-lg hover:bg-amber-50 transition-all duration-300 shadow-md flex items-center justify-center gap-2 text-sm font-bold w-full sm:w-auto border-2 border-amber-500'
+                              className: 'bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white px-4 py-2.5 rounded-xl transition-all duration-300 hover:scale-[1.03] shadow-md flex items-center justify-center gap-2 text-xs font-bold w-full sm:w-auto'
                             }, 
-                              React.createElement('span', { className: 'text-base' }, '❓'),
+                              React.createElement('span', { className: 'text-sm' }, '❓'),
                               'Hilfe'
                             )
                           ),
@@ -2400,52 +2505,52 @@
                             className: 'flex flex-col sm:flex-row justify-between items-center gap-2 text-xs sm:text-sm' 
                           },
                             React.createElement('div', { 
-                              className: 'text-gray-600 text-center sm:text-left' 
+                              className: 'text-slate-400 text-center sm:text-left font-bold' 
                             },
                               isListening ? 
                                 React.createElement('div', { className: 'listening-status space-y-2' },
-                                  React.createElement('div', { className: 'flex items-center gap-2' },
-                                    React.createElement('span', { className: 'status-icon text-red-500' }, '🔴'),
-                                    React.createElement('span', { className: 'status-text font-semibold' }, 'Zuhören... Bitte buchstabiere jedes Wort deutlich')
+                                  React.createElement('div', { className: 'flex items-center gap-1.5 text-rose-400 animate-pulse font-bold' },
+                                    React.createElement('span', { className: 'w-2 h-2 rounded-full bg-rose-500 shadow-[0_0_8px_#f43f5e]' }),
+                                    React.createElement('span', { className: 'status-text font-semibold text-xs' }, 'Zuhören... Buchstabiere deutlich')
                                   ),
-                                  recognitionConfidence > 0 && React.createElement('div', { className: 'confidence-display' },
+                                  recognitionConfidence > 0 && React.createElement('div', { className: 'confidence-display mt-1' },
                                     React.createElement('div', {
-                                      className: `confidence-bar px-2 py-1 rounded text-xs font-bold ${
-                                        recognitionConfidence > 0.8 ? 'bg-green-100 text-green-700' : 
-                                        recognitionConfidence > 0.6 ? 'bg-yellow-100 text-yellow-700' : 
-                                        'bg-red-100 text-red-700'
+                                      className: `confidence-bar px-2 py-0.5 rounded-lg text-[10px] font-bold inline-block ${
+                                        recognitionConfidence > 0.8 ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 
+                                        recognitionConfidence > 0.6 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' : 
+                                        'bg-red-500/20 text-red-300 border border-red-500/30'
                                       }`
                                     }, `Konfidenz: ${Math.round(recognitionConfidence * 100)}%`),
                                     lastRecognizedText && React.createElement('div', {
-                                      className: 'last-heard text-xs text-blue-600 italic mt-1'
-                                    }, `Zuletzt gehört: "${lastRecognizedText}"`)
+                                      className: 'last-heard text-[11px] text-cyan-300 italic mt-1 font-medium'
+                                    }, `Gehört: "${lastRecognizedText}"`)
                                   ),
-                                  React.createElement('div', { className: 'real-time-feedback mt-2' },
+                                  React.createElement('div', { className: 'real-time-feedback mt-2 border-t border-white/5 pt-2' },
                                     React.createElement('div', { className: 'grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4' },
                                       spokenText && React.createElement('div', { className: 'text-center' },
-                                        React.createElement('div', { className: 'text-xs font-medium text-gray-600 mb-1' }, 'Aktuell'),
+                                        React.createElement('div', { className: 'text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1' }, 'Aktuell'),
                                         React.createElement('div', { className: 'current-spelling' },
-                                          React.createElement('strong', { className: 'text-blue-600 text-sm font-mono' }, spokenText)
+                                          React.createElement('strong', { className: 'text-cyan-300 text-xs font-mono' }, spokenText)
                                         )
                                       ),
                                       currentWord && React.createElement('div', { className: 'text-center' },
-                                        React.createElement('div', { className: 'text-xs font-medium text-gray-600 mb-1' }, 'Ziel'),
+                                        React.createElement('div', { className: 'text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1' }, 'Ziel'),
                                         React.createElement('div', { className: 'target-word' },
-                                          React.createElement('strong', { className: 'text-gray-800 text-sm font-mono' }, currentWord.word)
+                                          React.createElement('strong', { className: 'text-slate-300 text-xs font-mono' }, currentWord.word)
                                         )
                                       ),
                                       currentWord && React.createElement('div', { className: 'text-center' },
-                                        React.createElement('div', { className: 'text-xs font-medium text-gray-600 mb-1' }, 'Fortschritt'),
+                                        React.createElement('div', { className: 'text-[10px] font-extrabold uppercase tracking-wider text-slate-400 mb-1' }, 'Fortschritt'),
                                         React.createElement('div', { className: 'progress-indicator flex gap-1 flex-wrap justify-center' },
                                           currentWord.word.split('').map((letter, index) =>
                                             React.createElement('span', {
                                               key: index,
-                                              className: `letter px-1 py-0.5 rounded text-xs font-mono ${
+                                              className: `letter px-1 py-0.5 rounded text-[10px] font-mono ${
                                                 index < spokenText.length ? 
                                                   (spokenText[index]?.toLowerCase() === letter.toLowerCase() ? 
-                                                    'bg-green-200 text-green-800 correct' : 
-                                                    'bg-red-200 text-red-800 incorrect') : 
-                                                  'bg-gray-200 text-gray-600 pending'
+                                                    'bg-green-500/20 text-green-300 border border-green-500/25 correct' : 
+                                                    'bg-red-500/20 text-red-300 border border-red-500/25 incorrect') : 
+                                                  'bg-white/5 text-white/40 pending'
                                               }`
                                             }, letter)
                                           )
@@ -2454,33 +2559,36 @@
                                     )
                                   )
                                 ) : 
-                                recognitionReady ? '💡 Bereit zum Zuhören' : '⚪ Klicke auf das Mikrofon, um zu starten'
+                                React.createElement('div', { className: 'flex items-center justify-center gap-1.5 text-slate-400 font-bold text-xs' },
+                                  React.createElement('span', { className: `w-2 h-2 rounded-full ${recognitionReady ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-slate-500'}` }),
+                                  React.createElement('span', {}, recognitionReady ? 'Bereit zum Zuhören' : 'Klicke Spracheingabe, um zu starten')
+                                )
                             ),
                             isCorrect !== null && React.createElement('div', {
-                              className: `px-4 py-2 rounded-full font-bold text-center text-sm ${
-                                isCorrect ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                              className: `px-4 py-2 rounded-full font-bold text-center text-xs ${
+                                isCorrect ? 'bg-green-500/20 text-green-300 border border-green-500/30' : 'bg-red-500/20 text-red-300 border border-red-500/30 shadow-[0_0_10px_rgba(244,63,94,0.15)]'
                               }`
-                            }, isCorrect ? '✅ Richtig!' : '❌ Versuchen Sie es noch einmal!')
+                            }, isCorrect ? '✅ Richtig!' : '❌ Falsch!')
                           )
                         )
                       ),
                       
                       // Manuelle Eingabe
-                      React.createElement('div', { className: 'bg-white rounded-lg p-3 sm:p-4 border border-gray-200 mt-4' },
+                      React.createElement('div', { className: 'bg-white bg-opacity-5 border border-white border-opacity-5 rounded-2xl p-3 sm:p-4 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] mt-4' },
                         React.createElement('div', { className: 'flex flex-col sm:flex-row gap-2' },
-                          React.createElement('div', { className: 'flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-1' },
+                          React.createElement('div', { className: 'flex flex-col sm:flex-row items-start sm:items-center gap-2 flex-1 w-full' },
                             React.createElement('label', { 
-                              className: 'text-xs sm:text-sm font-medium text-gray-700 whitespace-nowrap' 
-                            }, 'Buchstabe für Buchstabe eingeben:'),
+                              className: 'text-xs font-semibold text-slate-400 whitespace-nowrap' 
+                            }, 'Tastatureingabe:'),
                             React.createElement('input', {
                               type: 'text',
                               value: spokenText,
                               onChange: (e) => setSpokenText(e.target.value.toLowerCase()),
-                              placeholder: 'Buchstabe für Buchstabe eingeben...',
-                              className: `w-full p-2 sm:p-3 text-base sm:text-lg font-mono border-2 rounded-lg focus:outline-none focus:ring-2 ${
-                                isCorrect === true ? 'border-green-500 bg-green-50 focus:ring-green-300' :
-                                isCorrect === false ? 'border-red-500 bg-red-50 focus:ring-red-300' :
-                                'border-gray-300 focus:ring-blue-300'
+                              placeholder: 'Wort eintippen...',
+                              className: `w-full p-2.5 text-sm font-mono border rounded-xl focus:outline-none transition-all duration-300 ${
+                                isCorrect === true ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400 focus:border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]' :
+                                isCorrect === false ? 'border-rose-500/50 bg-rose-500/10 text-rose-400 focus:border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.2)]' :
+                                'border-white/10 bg-black/40 text-white focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400'
                               }`
                             })
                           ),
@@ -2488,30 +2596,30 @@
                           React.createElement('button', {
                             onClick: checkSpelling,
                             disabled: !spokenText.trim(),
-                            className: `px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-bold transition-all duration-300 text-sm w-full sm:w-auto mt-2 sm:mt-0 ${
+                            className: `px-4 sm:px-6 py-2.5 rounded-xl font-black uppercase tracking-wider text-xs transition-all duration-300 w-full sm:w-auto mt-2 sm:mt-0 ${
                               !spokenText.trim() 
-                                ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                                : 'bg-green-500 text-white hover:bg-green-600 shadow-md transform hover:scale-105'
+                                ? 'bg-white/5 text-white/30 border border-white/5 cursor-not-allowed'
+                                : 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white hover:shadow-[0_0_15px_rgba(16,185,129,0.3)] hover:scale-[1.02]'
                             }`
-                          }, 'Rechtschreibung prüfen')
+                          }, 'Prüfen')
                         )
                       ),
                       
                       // Endergebnis
                       isCorrect !== null && React.createElement('div', {
-                        className: `mt-4 p-3 sm:p-4 rounded-lg text-center font-bold text-base sm:text-lg ${
-                          isCorrect ? 'bg-green-100 text-green-800 border-2 border-green-300' : 'bg-red-100 text-red-800 border-2 border-red-300'
+                        className: `mt-4 p-3 sm:p-4 rounded-xl text-center font-extrabold uppercase tracking-wide text-xs border ${
+                          isCorrect ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.25)]' : 'bg-rose-500/10 text-rose-400 border-rose-500/30 shadow-[0_0_20px_rgba(244,63,94,0.25)] animate-bounce'
                         }`
                       }, isCorrect ? '✅ Richtig! Gut gemacht!' : '❌ Versuchen Sie es noch einmal!')
                     ) :
-                    React.createElement('div', { className: 'space-y-4' },
-                      React.createElement('div', { className: 'text-lg sm:text-2xl text-gray-600 font-semibold text-center py-8' },
+                    React.createElement('div', { className: 'space-y-4 py-8' },
+                      React.createElement('div', { className: 'text-lg sm:text-2xl text-slate-300 font-bold text-center' },
                         'Klicke auf "Starten", um zu beginnen'
                       ),
                       React.createElement('div', { className: 'text-center' },
                         React.createElement('button', {
                           onClick: selectRandomWord,
-                          className: 'bg-yellow-400 text-black py-3 sm:py-4 px-6 sm:px-8 rounded-xl font-bold text-lg sm:text-xl transition-all duration-300 hover:bg-yellow-300 shadow-lg transform hover:scale-105 flex items-center justify-center gap-2 sm:gap-3 mx-auto',
+                          className: 'bg-gradient-to-r from-yellow-400 via-amber-400 to-orange-400 hover:from-yellow-500 hover:via-amber-500 hover:to-orange-500 text-black py-3 sm:py-4 px-6 sm:px-8 rounded-2xl font-black text-sm sm:text-base uppercase tracking-wider transition-all duration-300 hover:scale-[1.05] shadow-[0_4px_20px_rgba(245,158,11,0.3)] flex items-center justify-center gap-2 sm:gap-3 mx-auto',
                           disabled: isSpinning
                         },
                           React.createElement(Shuffle, { className: 'w-5 h-5 sm:w-6 sm:h-6' }),
@@ -2523,10 +2631,11 @@
             )
           ),
           
-          showExample && React.createElement('div', { className: 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4' },
-            React.createElement('div', { className: 'bg-white rounded-2xl p-8 shadow-2xl border-4 border-yellow-400 max-w-2xl w-full mx-auto' },
+          // Modals de ejemplo y definición con estilo premium glass
+          showExample && React.createElement('div', { className: 'fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4' },
+            React.createElement('div', { className: 'bg-[#0f0a1e]/90 border border-white/10 backdrop-blur-2xl shadow-2xl p-8 rounded-3xl max-w-2xl w-full mx-auto relative' },
               React.createElement('div', { className: 'flex justify-between items-center mb-6' },
-                React.createElement('h2', { className: 'text-2xl font-bold text-black' }, 'Verwendungsbeispiel'),
+                React.createElement('h2', { className: 'text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 Space-Grotesk' }, 'Verwendungsbeispiel'),
                 React.createElement('div', { className: 'flex items-center gap-2' },
                   React.createElement('button', {
                     onClick: () => {
@@ -2535,34 +2644,34 @@
                         speak(cleanText);
                       }
                     },
-                    className: 'bg-yellow-400 text-black p-2 rounded-full hover:bg-yellow-300 transition-all duration-300 shadow-lg',
+                    className: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white p-2 rounded-full hover:from-amber-600 hover:to-orange-700 transition-all duration-300 shadow-lg',
                     title: 'Beispielsatz anhören'
                   }, React.createElement(Volume2, { className: 'w-4 h-4' })),
                   React.createElement('button', {
                     onClick: () => setShowExample(false),
-                    className: 'bg-red-600 text-white p-2 rounded-full hover:bg-red-700 transition-all duration-300'
+                    className: 'bg-white bg-opacity-10 border border-white/10 text-white p-2 rounded-full hover:bg-opacity-20 transition-all duration-300'
                   }, '✕')
                 )
               ),
               React.createElement('div', {
-                className: 'text-lg text-gray-800 leading-relaxed',
+                className: 'text-lg text-slate-300 leading-relaxed font-light',
                 dangerouslySetInnerHTML: {
-                  __html: currentExample.replace(/\*\*(.*?)\*\*/g, '<strong class="text-yellow-600 font-bold">$1</strong>')
+                  __html: currentExample.replace(/\*\*(.*?)\*\*/g, '<strong class="text-cyan-400 font-extrabold">$1</strong>')
                 }
               }),
               React.createElement('div', { className: 'mt-6 text-center' },
                 React.createElement('button', {
                   onClick: () => setShowExample(false),
-                  className: 'bg-yellow-400 text-black py-2 px-6 rounded-xl font-bold hover:bg-yellow-300 transition-all duration-300'
+                  className: 'bg-white bg-opacity-10 border border-white border-opacity-10 text-white py-2 px-6 rounded-xl font-bold hover:bg-opacity-20 transition-all duration-300 uppercase text-xs tracking-wider'
                 }, 'Schließen')
               )
             )
           ),
           
-          showDefinition && React.createElement('div', { className: 'fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4' },
-            React.createElement('div', { className: 'bg-white rounded-2xl p-8 shadow-2xl border-4 border-yellow-400 max-w-2xl w-full mx-auto' },
+          showDefinition && React.createElement('div', { className: 'fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4' },
+            React.createElement('div', { className: 'bg-[#0f0a1e]/90 border border-white/10 backdrop-blur-2xl shadow-2xl p-8 rounded-3xl max-w-2xl w-full mx-auto relative' },
               React.createElement('div', { className: 'flex justify-between items-center mb-6' },
-                React.createElement('h2', { className: 'text-2xl font-bold text-black' }, 'Definition'),
+                React.createElement('h2', { className: 'text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 Space-Grotesk' }, 'Definition'),
                 React.createElement('div', { className: 'flex items-center gap-2' },
                   React.createElement('button', {
                     onClick: () => {
@@ -2573,17 +2682,17 @@
                         }, 1200);
                       }
                     },
-                    className: 'bg-yellow-400 text-black p-2 rounded-full hover:bg-yellow-300 transition-all duration-300 shadow-lg',
-                    title: 'Wort und Definition anhören'
+                    className: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white p-2 rounded-full hover:from-amber-600 hover:to-orange-700 transition-all duration-300 shadow-lg',
+                    title: 'Listen to word and definition'
                   }, React.createElement(Volume2, { className: 'w-4 h-4' })),
                   React.createElement('button', {
                     onClick: () => setShowDefinition(false),
-                    className: 'bg-red-600 text-white p-2 rounded-full hover:bg-red-700 transition-all duration-300'
+                    className: 'bg-white bg-opacity-10 border border-white/10 text-white p-2 rounded-full hover:bg-opacity-20 transition-all duration-300'
                   }, '✕')
                 )
               ),
-              React.createElement('div', { className: 'text-lg text-gray-800 leading-relaxed' },
-                React.createElement('strong', { className: 'text-green-600 text-xl' }, `${currentWord?.word}:`),
+              React.createElement('div', { className: 'text-lg text-slate-300 leading-relaxed font-light' },
+                React.createElement('strong', { className: 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-400 text-xl font-extrabold mr-2' }, `${currentWord?.word}:`),
                 ` ${currentDefinition}`
               ),
               React.createElement('div', { className: 'mt-6 text-center' },
