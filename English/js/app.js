@@ -6508,34 +6508,34 @@
                         speak(cleanText);
                       }
                     },
-                    className: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white p-2 rounded-full hover:from-amber-600 hover:to-orange-700 transition-all duration-300 shadow-lg',
+                    className: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white p-2.5 rounded-full hover:from-amber-600 hover:to-orange-700 transition-all duration-300 shadow-lg',
                     title: 'Read Example'
                   }, React.createElement(Volume2, { className: 'w-4 h-4' })),
                   React.createElement('button', {
                     onClick: () => setShowExample(false),
-                    className: 'bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-all duration-300'
+                    className: 'bg-white bg-opacity-10 border border-white/10 text-white p-2.5 rounded-full hover:bg-opacity-20 transition-all duration-300'
                   }, '✕')
                 )
               ),
               React.createElement('div', {
-                className: 'text-lg text-gray-800 leading-relaxed',
+                className: 'text-lg text-slate-100 leading-relaxed font-semibold',
                 dangerouslySetInnerHTML: {
-                  __html: currentExample.replace(/\*\*(.*?)\*\*/g, '<strong class="text-blue-600 font-bold">$1</strong>')
+                  __html: currentExample.replace(/\*\*(.*?)\*\*/g, '<strong class="text-yellow-400 font-black drop-shadow-[0_2px_8px_rgba(250,204,21,0.35)]">$1</strong>')
                 }
               }),
               React.createElement('div', { className: 'mt-6 text-center' },
                 React.createElement('button', {
                   onClick: () => setShowExample(false),
-                  className: 'bg-amber-600 text-white py-2 px-6 rounded-xl font-bold hover:bg-amber-700 transition-all duration-300'
+                  className: 'bg-white bg-opacity-10 border border-white border-opacity-10 text-white py-2.5 px-6 rounded-xl font-bold hover:bg-opacity-20 transition-all duration-300 uppercase text-xs tracking-wider'
                 }, 'Close')
               )
             )
           ),
           
-          showDefinition && React.createElement('div', { className: 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4' },
-            React.createElement('div', { className: 'bg-white rounded-2xl p-8 shadow-2xl border-4 border-black max-w-2xl w-full mx-auto' },
+          showDefinition && React.createElement('div', { className: 'fixed inset-0 bg-black/60 backdrop-blur-md flex items-center justify-center z-50 p-4' },
+            React.createElement('div', { className: 'bg-[#0f0a1e]/90 border border-white/10 backdrop-blur-2xl shadow-2xl p-8 rounded-3xl max-w-2xl w-full mx-auto relative' },
               React.createElement('div', { className: 'flex justify-between items-center mb-6' },
-                React.createElement('h2', { className: 'text-2xl font-bold text-black' }, 'Definition'),
+                React.createElement('h2', { className: 'text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 Space-Grotesk' }, 'Definition'),
                 React.createElement('div', { className: 'flex items-center gap-2' },
                   React.createElement('button', {
                     onClick: () => {
@@ -6546,23 +6546,23 @@
                         }, 1200);
                       }
                     },
-                    className: 'bg-amber-600 text-white p-2 rounded-full hover:bg-amber-700 transition-all duration-300 shadow-lg',
+                    className: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white p-2.5 rounded-full hover:from-amber-600 hover:to-orange-700 transition-all duration-300 shadow-lg',
                     title: 'Listen to word and definition'
                   }, React.createElement(Volume2, { className: 'w-4 h-4' })),
                   React.createElement('button', {
                     onClick: () => setShowDefinition(false),
-                    className: 'bg-red-500 text-white p-2 rounded-full hover:bg-red-600 transition-all duration-300'
+                    className: 'bg-white bg-opacity-10 border border-white/10 text-white p-2.5 rounded-full hover:bg-opacity-20 transition-all duration-300'
                   }, '✕')
                 )
               ),
-              React.createElement('div', { className: 'text-lg text-gray-800 leading-relaxed' },
-                React.createElement('strong', { className: 'text-green-600 text-xl' }, `${currentWord?.word}:`),
+              React.createElement('div', { className: 'text-lg text-slate-100 leading-relaxed font-semibold' },
+                React.createElement('strong', { className: 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-400 text-xl font-extrabold mr-2' }, `${currentWord?.word}:`),
                 ` ${currentDefinition}`
               ),
               React.createElement('div', { className: 'mt-6 text-center' },
                 React.createElement('button', {
                   onClick: () => setShowDefinition(false),
-                  className: 'bg-amber-600 text-white py-2 px-6 rounded-xl font-bold hover:bg-amber-700 transition-all duration-300'
+                  className: 'bg-white bg-opacity-10 border border-white border-opacity-10 text-white py-2.5 px-6 rounded-xl font-bold hover:bg-opacity-20 transition-all duration-300 uppercase text-xs tracking-wider'
                 }, 'Close')
               )
             )

@@ -2644,25 +2644,25 @@
                         speak(cleanText);
                       }
                     },
-                    className: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white p-2 rounded-full hover:from-amber-600 hover:to-orange-700 transition-all duration-300 shadow-lg',
+                    className: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white p-2.5 rounded-full hover:from-amber-600 hover:to-orange-700 transition-all duration-300 shadow-lg',
                     title: 'Beispielsatz anhören'
                   }, React.createElement(Volume2, { className: 'w-4 h-4' })),
                   React.createElement('button', {
                     onClick: () => setShowExample(false),
-                    className: 'bg-white bg-opacity-10 border border-white/10 text-white p-2 rounded-full hover:bg-opacity-20 transition-all duration-300'
+                    className: 'bg-white bg-opacity-10 border border-white/10 text-white p-2.5 rounded-full hover:bg-opacity-20 transition-all duration-300'
                   }, '✕')
                 )
               ),
               React.createElement('div', {
-                className: 'text-lg text-slate-300 leading-relaxed font-light',
+                className: 'text-lg text-slate-100 leading-relaxed font-semibold',
                 dangerouslySetInnerHTML: {
-                  __html: currentExample.replace(/\*\*(.*?)\*\*/g, '<strong class="text-cyan-400 font-extrabold">$1</strong>')
+                  __html: currentExample.replace(/\*\*(.*?)\*\*/g, '<strong class="text-yellow-400 font-black drop-shadow-[0_2px_8px_rgba(250,204,21,0.35)]">$1</strong>')
                 }
               }),
               React.createElement('div', { className: 'mt-6 text-center' },
                 React.createElement('button', {
                   onClick: () => setShowExample(false),
-                  className: 'bg-white bg-opacity-10 border border-white border-opacity-10 text-white py-2 px-6 rounded-xl font-bold hover:bg-opacity-20 transition-all duration-300 uppercase text-xs tracking-wider'
+                  className: 'bg-white bg-opacity-10 border border-white border-opacity-10 text-white py-2.5 px-6 rounded-xl font-bold hover:bg-opacity-20 transition-all duration-300 uppercase text-xs tracking-wider'
                 }, 'Schließen')
               )
             )
@@ -2682,23 +2682,23 @@
                         }, 1200);
                       }
                     },
-                    className: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white p-2 rounded-full hover:from-amber-600 hover:to-orange-700 transition-all duration-300 shadow-lg',
+                    className: 'bg-gradient-to-r from-amber-500 to-orange-600 text-white p-2.5 rounded-full hover:from-amber-600 hover:to-orange-700 transition-all duration-300 shadow-lg',
                     title: 'Listen to word and definition'
                   }, React.createElement(Volume2, { className: 'w-4 h-4' })),
                   React.createElement('button', {
                     onClick: () => setShowDefinition(false),
-                    className: 'bg-white bg-opacity-10 border border-white/10 text-white p-2 rounded-full hover:bg-opacity-20 transition-all duration-300'
+                    className: 'bg-white bg-opacity-10 border border-white/10 text-white p-2.5 rounded-full hover:bg-opacity-20 transition-all duration-300'
                   }, '✕')
                 )
               ),
-              React.createElement('div', { className: 'text-lg text-slate-300 leading-relaxed font-light' },
+              React.createElement('div', { className: 'text-lg text-slate-100 leading-relaxed font-semibold' },
                 React.createElement('strong', { className: 'text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-blue-400 text-xl font-extrabold mr-2' }, `${currentWord?.word}:`),
                 ` ${currentDefinition}`
               ),
               React.createElement('div', { className: 'mt-6 text-center' },
                 React.createElement('button', {
                   onClick: () => setShowDefinition(false),
-                  className: 'bg-yellow-400 text-black py-2 px-6 rounded-xl font-bold hover:bg-yellow-300 transition-all duration-300'
+                  className: 'bg-white bg-opacity-10 border border-white border-opacity-10 text-white py-2.5 px-6 rounded-xl font-bold hover:bg-opacity-20 transition-all duration-300 uppercase text-xs tracking-wider'
                 }, 'Schließen')
               )
             )
