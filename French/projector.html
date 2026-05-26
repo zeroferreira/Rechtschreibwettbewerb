@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Spelling Bee - Écran Géant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800;900&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-gradient: radial-gradient(circle at center, #110c26 0%, #05030a 100%);
+      --font-sans: 'Outfit', sans-serif;
+      --font-mono: 'Space Grotesk', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      color: #ffffff;
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 3rem;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Starry background effect */
+    body::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: 
+        radial-gradient(white, rgba(255,255,255,.2) 2px, transparent 40px),
+        radial-gradient(white, rgba(255,255,255,.15) 1px, transparent 30px),
+        radial-gradient(white, rgba(255,255,255,.1) 2px, transparent 40px);
+      background-size: 550px 550px, 350px 350px, 250px 250px;
+      background-position: 0 0, 40px 60px, 130px 270px;
+      opacity: 0.25;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    header {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 24px;
+      padding: 1.5rem 2.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      backdrop-filter: blur(20px);
+      z-index: 10;
+      animation: slideDown 0.6s ease-out;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 900;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #FFE259 0%, #FFA751 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .progress {
+      font-size: 1.2rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.65);
+      background: rgba(255, 255, 255, 0.05);
+      padding: 0.5rem 1.2rem;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .subtitle {
+      font-size: 0.9rem;
+      font-weight: 800;
+      letter-spacing: 0.3em;
+      color: rgba(255, 255, 255, 0.4);
+      margin-bottom: 2rem;
+      text-transform: uppercase;
+    }
+
+    .slots-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1.2rem;
+      margin-bottom: 3.5rem;
+      perspective: 1000px;
+    }
+
+    .slot {
+      width: 5.5rem;
+      height: 7.5rem;
+      border-radius: 20px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3.8rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+      position: relative;
+    }
+
+    .slot-empty {
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 5px solid rgba(250, 204, 21, 0.35);
+      color: rgba(255, 255, 255, 0.06);
+    }
+
+    .slot-correct {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1.5px solid #10b981;
+      color: #34d399;
+      text-shadow: 0 0 20px rgba(52, 211, 153, 0.6);
+      box-shadow: 0 0 40px rgba(16, 185, 129, 0.25);
+      transform: scale(1.05);
+    }
+
+    .slot-incorrect {
+      background: rgba(244, 63, 94, 0.12);
+      border: 1.5px solid #f43f5e;
+      color: #fda4af;
+      text-shadow: 0 0 20px rgba(244, 63, 94, 0.6);
+      box-shadow: 0 0 40px rgba(244, 63, 94, 0.25);
+      animation: shake 0.5s ease-in-out;
+    }
+
+    .status-alert {
+      font-size: 2.2rem;
+      font-weight: 900;
+      letter-spacing: 0.15em;
+      padding: 1rem 3rem;
+      border-radius: 24px;
+      border-width: 1px;
+      border-style: solid;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+      text-transform: uppercase;
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .status-correct {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: #34d399;
+      box-shadow: 0 0 50px rgba(16, 185, 129, 0.25);
+    }
+
+    .status-incorrect {
+      background: rgba(244, 63, 94, 0.1);
+      border-color: rgba(244, 63, 94, 0.3);
+      color: #f43f5e;
+      box-shadow: 0 0 50px rgba(244, 63, 94, 0.25);
+      animation: pulseAlert 1.5s infinite alternate;
+    }
+
+    .waiting-message {
+      font-size: 2rem;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.35);
+      letter-spacing: 0.05em;
+      text-align: center;
+      animation: pulseText 2s infinite alternate;
+    }
+
+    footer {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      z-index: 10;
+    }
+
+    .mic-status {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      background: rgba(244, 63, 94, 0.08);
+      border: 1px solid rgba(244, 63, 94, 0.2);
+      padding: 0.8rem 2rem;
+      border-radius: 20px;
+      color: #fda4af;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+      animation: pulseMic 1.8s infinite alternate;
+    }
+
+    .mic-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #f43f5e;
+      box-shadow: 0 0 12px #f43f5e;
+    }
+
+    /* Keyframes */
+    @keyframes slideDown {
+      from { transform: translateY(-30px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes popIn {
+      from { transform: scale(0.8); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+      20%, 40%, 60%, 80% { transform: translateX(6px); }
+    }
+
+    @keyframes pulseText {
+      from { opacity: 0.3; }
+      to { opacity: 0.55; }
+    }
+
+    @keyframes pulseAlert {
+      from { box-shadow: 0 0 30px rgba(244, 63, 94, 0.15); }
+      to { box-shadow: 0 0 55px rgba(244, 63, 94, 0.35); }
+    }
+
+    @keyframes pulseMic {
+      from { opacity: 0.8; transform: scale(0.98); }
+      to { opacity: 1; transform: scale(1.02); }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1 id="header-title">Vue Écran Géant</h1>
+    <div class="progress" id="progress-indicator">Mots utilisés: 0 / 0</div>
+  </header>
+
+  <main>
+    <div id="game-content" style="display: none; width: 100%; text-align: center;">
+      <div class="subtitle">Mot à Épeler</div>
+      <div class="slots-container" id="slots-wrapper"></div>
+      <div style="display: flex; justify-content: center;" id="alert-wrapper"></div>
+    </div>
+    <div id="waiting-screen" class="waiting-message">
+      En attente de la sélection d'un mot...
+    </div>
+  </main>
+
+  <footer>
+    <div class="mic-status" id="mic-indicator" style="display: none;">
+      <div class="mic-dot"></div>
+      <span>MICROPHONE ACTIF - ÉCOUTE EN COURS...</span>
+    </div>
+  </footer>
+
+  <script>
+    const headerTitle = document.getElementById('header-title');
+    const progressIndicator = document.getElementById('progress-indicator');
+    const gameContent = document.getElementById('game-content');
+    const waitingScreen = document.getElementById('waiting-screen');
+    const slotsWrapper = document.getElementById('slots-wrapper');
+    const alertWrapper = document.getElementById('alert-wrapper');
+    const micIndicator = document.getElementById('mic-indicator');
+
+    // Create broadcast channel
+    const bc = new BroadcastChannel('spelling_bee_sync');
+
+    function updateUI(state) {
+      if (!state || !state.currentWord) {
+        gameContent.style.display = 'none';
+        waitingScreen.style.display = 'block';
+        micIndicator.style.display = 'none';
+        progressIndicator.textContent = 'Mots utilisés: 0 / 0';
+        return;
+      }
+
+      waitingScreen.style.display = 'none';
+      gameContent.style.display = 'block';
+
+      // Update Header
+      headerTitle.textContent = `${state.levelName} - Concours`;
+      progressIndicator.textContent = `Mots utilisés: ${state.usedWordsCount} / ${state.totalWordsCount}`;
+
+      // Update Mic status
+      micIndicator.style.display = state.isListening ? 'flex' : 'none';
+
+      // Render slots
+      slotsWrapper.innerHTML = '';
+      const target = state.currentWord.word.toLowerCase();
+      const spoken = (state.spokenText || '').toLowerCase().trim();
+
+      for (let i = 0; i < target.length; i++) {
+        const targetLetter = target[i];
+        const spokenLetter = spoken[i] || '';
+
+        const slot = document.createElement('div');
+        slot.className = 'slot';
+
+        if (spokenLetter) {
+          slot.textContent = spokenLetter.toUpperCase();
+          if (spokenLetter === targetLetter) {
+            slot.classList.add('slot-correct');
+          } else {
+            slot.classList.add('slot-incorrect');
+          }
+        } else {
+          slot.textContent = '_';
+          slot.classList.add('slot-empty');
+        }
+
+        slotsWrapper.appendChild(slot);
+      }
+
+      // Render Correct / Incorrect overlay
+      alertWrapper.innerHTML = '';
+      if (state.isCorrect !== null) {
+        const alertBox = document.createElement('div');
+        if (state.isCorrect) {
+          alertBox.className = 'status-alert status-correct';
+          alertBox.textContent = '✅ Correct !';
+        } else {
+          alertBox.className = 'status-alert status-incorrect';
+          alertBox.textContent = '❌ Réessayez !';
+        }
+        alertWrapper.appendChild(alertBox);
+      }
+    }
+
+    // Handle messages
+    bc.onmessage = (event) => {
+      if (event.data && (event.data.type === 'STATE_UPDATE' || !event.data.type)) {
+        updateUI(event.data);
+      }
+    };
+
+    // Request initial state on load
+    bc.postMessage({ type: 'REQUEST_STATE' });
+  </script>
+</body>
+</html>

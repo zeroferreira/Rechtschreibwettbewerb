@@ -766,6 +766,35 @@
       localStorage.setItem('bee_de_suggestions', JSON.stringify(suggestions));
     }, [suggestions]);
 
+    // Sync state to projector window via BroadcastChannel
+    useEffect(() => {
+      const bc = new BroadcastChannel('spelling_bee_sync');
+      const broadcastState = () => {
+        bc.postMessage({
+          type: 'STATE_UPDATE',
+          currentWord: currentWord,
+          spokenText: spokenText,
+          isListening: isListening,
+          isCorrect: isCorrect,
+          levelName: selectedLevel ? (levels[selectedLevel]?.name || '') : '',
+          usedWordsCount: usedWords.length,
+          totalWordsCount: selectedLevel ? (levels[selectedLevel]?.words.length || 0) : 0
+        });
+      };
+      
+      broadcastState();
+      
+      bc.onmessage = (event) => {
+        if (event.data && event.data.type === 'REQUEST_STATE') {
+          broadcastState();
+        }
+      };
+      
+      return () => {
+        bc.close();
+      };
+    }, [currentWord, spokenText, isListening, isCorrect, selectedLevel, usedWords, levels]);
+
     const getFilterThreshold = () => {
       switch(filterSensitivity) {
         case 'low': return 0.5;    // Más permisivo
@@ -2381,7 +2410,9 @@
               ),
               React.createElement('div', { className: 'flex items-center gap-2' },
                 gameMode === 'contest' && React.createElement('button', {
-                  onClick: () => setShowProjectorMode(true),
+                  onClick: () => {
+                    window.open('projector.html', 'spelling_bee_projector', 'width=1200,height=800,menubar=no,toolbar=no,location=no,status=no');
+                  },
                   className: 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-3 py-2 sm:py-2.5 rounded-full hover:from-cyan-600 hover:to-blue-700 transition-all duration-300 shadow-[0_0_15px_rgba(6,182,212,0.25)] flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider hover:scale-105 transform'
                 }, '📺 Großbild'),
                 React.createElement('button', {
