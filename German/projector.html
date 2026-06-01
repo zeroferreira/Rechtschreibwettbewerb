@@ -162,6 +162,32 @@
       animation: shake 0.5s ease-in-out;
     }
 
+    .limit-divider {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      align-self: center;
+      width: 4px;
+      height: 7.5rem;
+      background: rgba(244, 63, 94, 0.6);
+      box-shadow: 0 0 10px rgba(244, 63, 94, 0.8);
+      border-radius: 2px;
+      margin: 0 0.5rem;
+      position: relative;
+    }
+
+    .limit-divider::after {
+      content: 'LIMIT';
+      position: absolute;
+      top: -25px;
+      font-size: 0.8rem;
+      font-weight: 800;
+      color: #fda4af;
+      letter-spacing: 0.1em;
+      text-shadow: 0 0 5px rgba(244, 63, 94, 0.8);
+    }
+
     .status-alert {
       font-size: 2.2rem;
       font-weight: 900;
@@ -355,19 +381,26 @@
 
       // Render slots
       slotsWrapper.innerHTML = '';
-      const target = state.currentWord.word.toLowerCase();
-      const spoken = (state.spokenText || '').toLowerCase().trim();
+      const target = state.currentWord.word;
+      const spoken = (state.spokenText || '').trim();
+      const maxLength = Math.max(target.length, spoken.length);
 
-      for (let i = 0; i < target.length; i++) {
-        const targetLetter = target[i];
+      for (let i = 0; i < maxLength; i++) {
+        const targetLetter = target[i] || '';
         const spokenLetter = spoken[i] || '';
+
+        if (i === target.length) {
+          const divider = document.createElement('div');
+          divider.className = 'limit-divider';
+          slotsWrapper.appendChild(divider);
+        }
 
         const slot = document.createElement('div');
         slot.className = 'slot';
 
         if (spokenLetter) {
-          slot.textContent = spokenLetter.toUpperCase();
-          if (spokenLetter === targetLetter) {
+          slot.textContent = spokenLetter;
+          if (spokenLetter.toLowerCase() === targetLetter.toLowerCase()) {
             slot.classList.add('slot-correct');
           } else {
             slot.classList.add('slot-incorrect');

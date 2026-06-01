@@ -253,6 +253,8 @@
           }
         }
         // Verificar error (si longitud es igual o mayor y no es éxito)
+        // Comentado para permitir deletrear letras extra (marcando el límite en rojo y dejando terminar al alumno)
+        /*
         else if (cleanSpoken.length >= target.length) {
           console.log('❌ Error detectado (longitud alcanzada o excedida).');
           setShowErrorModal(true);
@@ -262,6 +264,7 @@
              } catch(e) { console.log('Error al detener recognition:', e); }
           }
         }
+        */
       }
     }, [spokenText, currentWord, recognition]); // Añadido recognition a dependencias
 
@@ -314,7 +317,7 @@
       // Si el alumno sigue deletreando más allá del límite de la palabra
       if (nextExpectedIndex >= target.length) {
         // Cualquier letra extra es incorrecta y se agrega directamente en el mismo formato hablado
-        return base + result[0];
+        return base + result;
       }
       
       const nextExpectedLetter = target[nextExpectedIndex];
@@ -336,6 +339,8 @@
               newText += result[idx] || expected;
               tempMatch += expected;
             } else {
+              // Si topamos con un carácter incorrecto, añadimos el resto del resultado desde este índice
+              newText += result.slice(idx);
               break;
             }
             idx++;
@@ -344,7 +349,7 @@
         } 
         // Si es incorrecto, simplemente agregamos la letra incorrecta (con la forma en que se capturó)
         else {
-          return base + result[0];
+          return base + result;
         }
       }
       
@@ -6514,7 +6519,7 @@
                           React.createElement('input', {
                             type: 'text',
                             value: spokenText,
-                            onChange: (e) => setSpokenText(e.target.value.toLowerCase()),
+                            onChange: (e) => setSpokenText(e.target.value),
                             placeholder: 'Type here...',
                             className: `w-full p-2.5 text-sm font-mono border rounded-xl focus:outline-none transition-all duration-300 ${
                               isCorrect === true ? 'border-emerald-500/50 bg-emerald-500/10 text-emerald-400 focus:border-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]' :
@@ -6664,18 +6669,28 @@
                 React.createElement('h3', { className: 'text-xs sm:text-sm font-extrabold uppercase tracking-widest text-slate-400 block' }, 'WORD TO SPELL :'),
                 React.createElement('div', { className: 'flex flex-wrap justify-center gap-3 sm:gap-4 max-w-6xl mx-auto' },
                   (() => {
-                    const target = currentWord.word.toLowerCase();
-                    const spoken = spokenText.toLowerCase().trim();
+                    const target = currentWord.word;
+                    const spoken = spokenText.trim();
                     const slots = [];
+                    const maxLength = Math.max(target.length, spoken.length);
 
-                    for (let i = 0; i < target.length; i++) {
-                      const targetLetter = target[i];
+                    for (let i = 0; i < maxLength; i++) {
+                      const targetLetter = target[i] || '';
                       const spokenLetter = spoken[i] || '';
+
+                      if (i === target.length) {
+                        slots.push(
+                          React.createElement('div', {
+                            key: 'divider',
+                            className: 'w-1 h-16 sm:h-28 bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.8)] mx-2 rounded-full self-center relative after:content-["LIMIT"] after:absolute after:-top-6 after:left-1/2 after:-translate-x-1/2 after:text-[10px] after:font-black after:text-rose-300'
+                          })
+                        );
+                      }
 
                       let slotClass = 'w-12 h-16 sm:w-20 sm:h-28 rounded-2xl border flex items-center justify-center text-3xl sm:text-5xl font-black transition-all duration-500 shadow-2xl ';
                       
                       if (spokenLetter) {
-                        if (spokenLetter === targetLetter) {
+                        if (spokenLetter.toLowerCase() === targetLetter.toLowerCase()) {
                           // Letra correcta: Fondo de cristal esmeralda y brillo
                           slotClass += 'bg-emerald-500/15 border-emerald-400 text-emerald-300 shadow-[0_0_30px_rgba(52,211,153,0.35)]';
                         } else {
@@ -6691,7 +6706,7 @@
                         React.createElement('div', { 
                           key: i, 
                           className: slotClass 
-                        }, spokenLetter.toUpperCase() || '_')
+                        }, spokenLetter || '_')
                       );
                     }
                     return slots;
