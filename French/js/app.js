@@ -791,6 +791,63 @@
     const currentWordRef = useRef(null);
     const shouldKeepListeningRef = useRef(false);
 
+    // Actualizar la referencia cuando currentWord cambie
+    useEffect(() => {
+      currentWordRef.current = currentWord;
+    }, [currentWord]);
+    
+    // Actualizar la referencia cuando shouldKeepListening cambie
+    useEffect(() => {
+      shouldKeepListeningRef.current = shouldKeepListening;
+    }, [shouldKeepListening]);
+
+    // Efecto interactivo y dinámico para verificar la palabra carácter por carácter
+    useEffect(() => {
+      if (currentWord && spokenText) {
+        // Normalización para comparar (quitar acentos, diacríticos, mayúsculas, espacios)
+        const cleanSpoken = normalizeForCompare(spokenText);
+        const target = normalizeForCompare(currentWord.word);
+        
+        console.log(`🔍 Verificando (FR): "${cleanSpoken}" vs "${target}"`);
+
+        // Comprobación de error dinámica carácter por carácter
+        let hasError = false;
+        for (let i = 0; i < cleanSpoken.length; i++) {
+          if (cleanSpoken[i] !== target[i]) {
+            hasError = true;
+            break;
+          }
+        }
+
+        if (hasError) {
+          console.log('❌ Error detectado (letra incorrecta).');
+          setIsCorrect(false);
+          if (recognition) {
+             try {
+               recognition.manualStop();
+             } catch(e) { console.log('Error al detener recognition:', e); }
+          }
+          // Limpiar el estado de error después de 2 segundos para permitir reintentar
+          setTimeout(() => setIsCorrect(null), 2000);
+        } else if (cleanSpoken === target) {
+          console.log('✅ ¡Coincidencia exacta detectada (FR)!');
+          setIsCorrect(true);
+          
+          if (recognition) {
+             try {
+               recognition.manualStop();
+             } catch(e) { console.log('Error al detener recognition:', e); }
+          }
+          // En la versión francesa, el éxito avanza automáticamente tras 2 segundos
+          setTimeout(() => {
+            setIsCorrect(null);
+            setSpokenText('');
+            selectRandomWord();
+          }, 2000);
+        }
+      }
+    }, [spokenText, currentWord, recognition]);
+
 
     // Cargar voces disponibles (Integrado con Voces Premium de Azure, ResponsiveVoice y voces nativas)
     useEffect(() => {
@@ -828,6 +885,15 @@
     }, []);
 
 
+
+    const normalizeForCompare = (text) => {
+      return (text || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[’']/g, '')
+        .replace(/[^a-z]/g, '');
+    };
 
     // Configuración optimizada para móviles
     const optimizeForMobile = () => {
@@ -974,6 +1040,23 @@
       let contextBuffer = ''; // Buffer de contexto para mejor precisión
       let confidenceThreshold = 0.3; // Umbral de confianza mínimo
       let detectedNoiseLevel = 0; // Nivel de ruido detectado
+
+      let idleTimeout = null;
+      
+      const resetIdleTimeout = () => {
+        if (idleTimeout) clearTimeout(idleTimeout);
+        idleTimeout = setTimeout(() => {
+          console.log('⏰ Micrófono inactivo por inactividad prolongada (15s), deteniendo...');
+          recognitionInstance.manualStop();
+        }, 15000);
+      };
+      
+      const clearIdleTimeout = () => {
+        if (idleTimeout) {
+          clearTimeout(idleTimeout);
+          idleTimeout = null;
+        }
+      };
       
       // Umbral de confianza optimizado para inglés
       const getEnglishOptimizedThreshold = (context, noiseLevel, letterType) => {
@@ -1005,6 +1088,7 @@
         setRecognitionReady(true);
         isManualStop = false;
         lastProcessedLength = 0;
+        resetIdleTimeout();
       };
       
       // Variables para control en modo continuo
@@ -1013,6 +1097,7 @@
       let lastInterimText = ''; // El último texto interim mostrado (para reemplazarlo por el final)
       
       recognitionInstance.onresult = (event) => {
+        resetIdleTimeout();
         // En modo continuous, cada resultado tiene su propio índice
         // Procesamos SÓLO los resultados nuevos desde event.resultIndex
         for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -1064,7 +1149,7 @@
           case 'network':
             console.log('🌐 Error de red - usando modo offline');
             // En lugar de fallar, continuar sin conexión
-            if (shouldKeepListening && !isManualStop) {
+            if (shouldKeepListeningRef.current && !isManualStop) {
               setTimeout(() => {
                 try {
                   recognitionInstance.start();
@@ -1104,7 +1189,7 @@
             
           case 'aborted':
             console.log('🛑 Reconocimiento abortado');
-            if (shouldKeepListening && !isManualStop) {
+            if (shouldKeepListeningRef.current && !isManualStop) {
               setTimeout(() => {
                 try {
                   recognitionInstance.start();
@@ -1117,7 +1202,7 @@
             
           default:
             console.log('❓ Error desconocido:', event.error, '- reintentando...');
-            if (shouldKeepListening && !isManualStop) {
+            if (shouldKeepListeningRef.current && !isManualStop) {
               setTimeout(() => {
                 try {
                   recognitionInstance.start();
@@ -1131,12 +1216,13 @@
       
       recognitionInstance.onend = () => {
         console.log('🔚 Reconocimiento terminado');
+        clearIdleTimeout();
         
         // Limpiar variables de deduplicación al reiniciar
         processedContent.clear();
         lastFinalTranscript = '';
         
-        if (shouldKeepListening && !isManualStop) {
+        if (shouldKeepListeningRef.current && !isManualStop) {
           console.log('🔄 Reiniciando automáticamente...');
           const timeouts = optimizeForMobile().timeouts;
           const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -1148,7 +1234,7 @@
             } catch (error) {
               console.log('Error en reinicio automático:', error);
               // En móviles, intentar una vez más con delay adicional
-              if (isMobile && shouldKeepListening) {
+              if (isMobile && shouldKeepListeningRef.current) {
                 setTimeout(() => {
                   try {
                     recognitionInstance.start();
@@ -1171,7 +1257,9 @@
       // Función para detener manualmente
       recognitionInstance.manualStop = () => {
         isManualStop = true;
+        clearIdleTimeout();
         setShouldKeepListening(false);
+        shouldKeepListeningRef.current = false; // Sincronización inmediata
         setIsListening(false); // ← Esta línea faltaba
         setRecognitionReady(false); // ← Agregar esta línea también
         setRecognitionConfidence(0); // Limpiar indicador de confianza
@@ -1293,6 +1381,7 @@
       } else {
         console.log('▶️ INICIANDO reconocimiento...');
         setShouldKeepListening(true);
+        shouldKeepListeningRef.current = true; // Sincronización inmediata
         
         try {
           recognition.start();
@@ -1938,7 +2027,7 @@
 
     // Función para verificar la palabra
       const checkSpelling = () => {
-        if (currentWord && spokenText.toLowerCase() === currentWord.word.toLowerCase()) {
+        if (currentWord && normalizeForCompare(spokenText) === normalizeForCompare(currentWord.word)) {
           setIsCorrect(true);
           // Detener reconocimiento de voz si está activo
           if (isListening && recognition) {

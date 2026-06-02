@@ -277,8 +277,25 @@
         
         console.log(`🔍 Verificando: "${cleanSpoken}" vs "${target}"`);
 
-        // Verificar éxito
-        if (cleanSpoken === target) {
+        // Comprobación de error dinámica carácter por carácter
+        let hasError = false;
+        for (let i = 0; i < cleanSpoken.length; i++) {
+          if (cleanSpoken[i] !== target[i]) {
+            hasError = true;
+            break;
+          }
+        }
+
+        if (hasError) {
+          console.log('❌ Error detectado (letra incorrecta).');
+          setIsCorrect(false);
+          setShowErrorModal(true);
+          if (recognition) {
+             try {
+               recognition.manualStop();
+             } catch(e) { console.log('Error al detener recognition:', e); }
+          }
+        } else if (cleanSpoken === target) {
           console.log('✅ ¡Coincidencia exacta detectada!');
           setIsCorrect(true);
           setShowSuccessModal(true);
@@ -290,19 +307,6 @@
              } catch(e) { console.log('Error al detener recognition:', e); }
           }
         }
-        // Verificar error (si longitud es igual o mayor y no es éxito)
-        // Comentado para permitir deletrear letras extra (marcando el límite en rojo y dejando terminar al alumno)
-        /*
-        else if (cleanSpoken.length >= target.length) {
-          console.log('❌ Error detectado (longitud alcanzada o excedida).');
-          setShowErrorModal(true);
-          if (recognition) {
-             try {
-               recognition.manualStop();
-             } catch(e) { console.log('Error al detener recognition:', e); }
-          }
-        }
-        */
       }
     }, [spokenText, currentWord, recognition]); // Añadido recognition a dependencias
 
@@ -451,6 +455,24 @@
       let contextBuffer = ''; // Buffer de contexto para mejor precisión
       let confidenceThreshold = 0.3; // Umbral de confianza mínimo
       let detectedNoiseLevel = 0; // Nivel de ruido detectado
+
+      let idleTimeout = null;
+      
+      const resetIdleTimeout = () => {
+        if (idleTimeout) clearTimeout(idleTimeout);
+        idleTimeout = setTimeout(() => {
+          console.log('⏰ Micrófono inactivo por inactividad prolongada (15s), deteniendo...');
+          addDebugLog('info', '⏰ Micrófono inactivo, deteniendo...');
+          recognitionInstance.manualStop();
+        }, 15000);
+      };
+      
+      const clearIdleTimeout = () => {
+        if (idleTimeout) {
+          clearTimeout(idleTimeout);
+          idleTimeout = null;
+        }
+      };
       
       // Umbral de confianza optimizado para inglés
       const getEnglishOptimizedThreshold = (context, noiseLevel, letterType) => {
@@ -483,6 +505,7 @@
         setRecognitionReady(true);
         isManualStop = false;
         lastProcessedLength = 0;
+        resetIdleTimeout();
       };
       
       // Variables para control en modo continuo
@@ -491,6 +514,7 @@
       let lastInterimText = ''; // El último texto interim mostrado (para reemplazarlo por el final)
       
       recognitionInstance.onresult = (event) => {
+        resetIdleTimeout();
         // En modo continuous, cada resultado tiene su propio índice
         // Procesamos SÓLO los resultados nuevos desde event.resultIndex
         for (let i = event.resultIndex; i < event.results.length; i++) {
@@ -622,6 +646,7 @@
       recognitionInstance.onend = () => {
         console.log('🔚 Reconocimiento terminado');
         addDebugLog('end', '🔚 Mic TERMINADO - reiniciando...');
+        clearIdleTimeout();
         
         // Limpiar variables de deduplicación al reiniciar
         processedContent.clear();
@@ -662,6 +687,7 @@
       // Función para detener manualmente
       recognitionInstance.manualStop = () => {
         isManualStop = true;
+        clearIdleTimeout();
         setShouldKeepListening(false);
         shouldKeepListeningRef.current = false; // Sincronización inmediata
         setIsListening(false); // ← Esta línea faltaba
