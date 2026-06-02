@@ -755,10 +755,32 @@
     const [lastRecognizedText, setLastRecognizedText] = useState('');
     const [filterSensitivity, setFilterSensitivity] = useState('medium');
 
+    // Debug: registro silencioso en segundo plano
+    const [debugLogs, setDebugLogs] = React.useState(() => {
+      try {
+        const stored = localStorage.getItem('bee_debug_logs');
+        return stored ? JSON.parse(stored) : [];
+      } catch(e) { return []; }
+    });
+    const debugLogsRef = React.useRef(debugLogs);
+    const addDebugLog = React.useCallback((type, message, data) => {
+      const entry = {
+        time: new Date().toLocaleTimeString('es-MX', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        type,
+        message,
+        data: data ? JSON.stringify(data) : ''
+      };
+      debugLogsRef.current = [entry, ...debugLogsRef.current].slice(0, 150);
+      setDebugLogs(debugLogsRef.current);
+      // Guardar en localStorage para no perder datos al recargar
+      try { localStorage.setItem('bee_debug_logs', JSON.stringify(debugLogsRef.current)); } catch(e) {}
+    }, []);
+
     // Estados para el sistema de Ayuda y Reportes (Aide et Rapports)
     const [showHelpMenu, setShowHelpMenu] = useState(false);
     const [helpModalType, setHelpModalType] = useState(null); // 'report' o 'suggestion'
     const [helpDocked, setHelpDocked] = useState(false);
+    const [showConsole, setShowConsole] = useState(false);
     const [reports, setReports] = useState(() => JSON.parse(localStorage.getItem('bee_fr_reports') || '[]'));
     const [suggestions, setSuggestions] = useState(() => JSON.parse(localStorage.getItem('bee_fr_suggestions') || '[]'));
     
@@ -1084,6 +1106,7 @@
       
       recognitionInstance.onstart = () => {
         console.log('🎤 Reconocimiento INICIADO');
+        if (typeof addDebugLog === 'function') addDebugLog('start', '🎤 Mic INICIADO');
         setIsListening(true);
         setRecognitionReady(true);
         isManualStop = false;
@@ -1120,6 +1143,7 @@
             if (wordsInTranscript.length === 1 && wordsInTranscript[0].length > 1) {
               if (cleanTranscript === cleanTarget) {
                 console.log('🚫 Palabra completa detectada al inicio/final, ignorando:', transcript);
+                if (typeof addDebugLog === 'function') addDebugLog('info', `🚫 Palabra completa ignorada: "${transcript}"`);
                 continue;
               }
             }
@@ -1127,16 +1151,20 @@
           
           if (isFinal) {
             console.log('✅ Resultado FINAL:', transcript);
+            if (typeof addDebugLog === 'function') addDebugLog('final', `✅ FINAL: "${transcript}"`);
             // Si ya mostramos este texto como interim, no volver a procesarlo
             if (transcript !== lastInterimText) {
               const result = processSpokenInput(transcript);
               if (result === 'DELETE') {
                 setSpokenText(prev => prev.slice(0, -1));
+                if (typeof addDebugLog === 'function') addDebugLog('final', '🔤 Letra eliminada (DELETE)');
               } else if (result === 'CLEAR') {
                 setSpokenText('');
+                if (typeof addDebugLog === 'function') addDebugLog('final', '🔤 Deletreo limpiado (CLEAR)');
               } else if (result) {
                 setSpokenText(prev => prev + result);
                 console.log('🔤 Letra(s) final confirmada:', result);
+                if (typeof addDebugLog === 'function') addDebugLog('final', `🔤 Letra añadida: "${result}"`);
               }
             } else {
               console.log('🔄 Final coincide con interim ya mostrado, no duplicar');
@@ -1144,6 +1172,7 @@
             lastInterimText = ''; // Limpiar el interim tracking
           } else {
             console.log('🔄 Resultado INTERIM:', transcript);
+            if (typeof addDebugLog === 'function') addDebugLog('interim', `🔄 INTERIM: "${transcript}"`);
             // Solo procesar si es diferente al último interim
             if (transcript !== lastInterimText) {
               const result = processSpokenInput(transcript);
@@ -1154,6 +1183,7 @@
               } else if (result) {
                 setSpokenText(prev => prev + result);
                 console.log('🔤 Letra(s) interim mostrada:', result);
+                if (typeof addDebugLog === 'function') addDebugLog('interim', `🔤 Interim: "${result}"`);
               }
               lastInterimText = transcript;
             }
@@ -1163,6 +1193,7 @@
       
       recognitionInstance.onerror = (event) => {
         console.error('❌ Error de reconocimiento:', event.error);
+        if (typeof addDebugLog === 'function') addDebugLog('error', `❌ ERROR: ${event.error}`);
         
         const timeouts = optimizeForMobile().timeouts;
         
@@ -1237,6 +1268,7 @@
       
       recognitionInstance.onend = () => {
         console.log('🔚 Reconocimiento terminado');
+        if (typeof addDebugLog === 'function') addDebugLog('end', '🔚 Mic TERMINADO');
         clearIdleTimeout();
         
         // Limpiar variables de deduplicación al reiniciar
@@ -7276,8 +7308,205 @@
                 setShowHelpMenu(false);
               },
               className: 'w-full text-left px-4 py-3 hover:bg-blue-50 text-blue-600 font-bold rounded-lg flex items-center gap-2 mt-1 help-option-btn'
-            }, '💡 Suggestions')
+            }, '💡 Suggestions'),
+            React.createElement('button', {
+              onClick: () => {
+                setShowHelpMenu(false);
+                const pass = prompt("Admin Password:");
+                if (pass === atob('MTQxNTEzMCo=')) {
+                  setShowConsole(true);
+                  if (typeof addDebugLog === 'function') {
+                    addDebugLog('info', '⌨️ Modo Consola activado por el usuario.');
+                  }
+                } else if (pass !== null) {
+                  alert("Incorrect password");
+                }
+              },
+              className: 'w-full text-left px-4 py-3 hover:bg-purple-50 text-purple-600 font-bold rounded-lg flex items-center gap-2 mt-1 help-option-btn'
+            }, '⌨️ Modo Consola')
           )
+        ),
+        
+        // Consola Visual Overlay
+        showConsole && React.createElement('div', {
+          style: {
+            position: 'fixed',
+            top: '20px',
+            left: '20px',
+            right: '20px',
+            bottom: '20px',
+            backgroundColor: 'rgba(10, 8, 20, 0.95)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid rgba(168, 85, 247, 0.4)',
+            borderRadius: '16px',
+            padding: '20px',
+            zIndex: 99999,
+            display: 'flex',
+            flexDirection: 'column',
+            fontFamily: 'monospace',
+            color: '#a78bfa',
+            boxShadow: '0 0 30px rgba(168, 85, 247, 0.3)',
+          }
+        },
+          // Header
+          React.createElement('div', {
+            style: {
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              borderBottom: '1px solid rgba(168, 85, 247, 0.2)',
+              paddingBottom: '12px',
+              marginBottom: '12px'
+            }
+          },
+            React.createElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+              React.createElement('span', { style: { fontSize: '18px' } }, '⌨️'),
+              React.createElement('h3', { style: { margin: 0, fontSize: '18px', fontWeight: 'bold', color: '#f3e8ff' } }, 'Console Mode')
+            ),
+            React.createElement('div', { style: { display: 'flex', gap: '8px' } },
+              // Clear Button
+              React.createElement('button', {
+                onClick: () => {
+                  debugLogsRef.current = [];
+                  setDebugLogs([]);
+                  try { localStorage.removeItem('bee_debug_logs'); } catch(e) {}
+                },
+                style: {
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  border: '1px solid rgba(239, 68, 68, 0.3)',
+                  color: '#fca5a5',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                }
+              }, 'Clear'),
+              // Copy Button
+              React.createElement('button', {
+                onClick: () => {
+                  const text = debugLogs.map(l => `[${l.time}] ${l.type.toUpperCase()} | ${l.message}${l.data ? ' ' + l.data : ''}`).join('\n');
+                  navigator.clipboard.writeText(text).then(() => {
+                    alert('Copied to clipboard!');
+                  });
+                },
+                style: {
+                  background: 'rgba(168, 85, 247, 0.1)',
+                  border: '1px solid rgba(168, 85, 247, 0.3)',
+                  color: '#e9d5ff',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                }
+              }, 'Copy Logs'),
+              // Close Button
+              React.createElement('button', {
+                onClick: () => setShowConsole(false),
+                style: {
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.2)',
+                  color: '#ffffff',
+                  padding: '6px 12px',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                }
+              }, 'Close')
+            )
+          ),
+          
+          // Logs Display
+          React.createElement('div', {
+            style: {
+              flex: 1,
+              overflowY: 'auto',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '8px',
+              paddingRight: '6px',
+            }
+          },
+            debugLogs.length === 0 
+              ? React.createElement('div', { style: { color: '#6b7280', fontStyle: 'italic', padding: '10px' } }, 'No logs recorded yet. Start spelling!')
+              : debugLogs.map((log, index) => {
+                  let badgeBg = 'rgba(107, 114, 128, 0.1)';
+                  let badgeColor = '#9ca3af';
+                  let msgColor = '#e2e8f0';
+
+                  if (log.type === 'error') {
+                    badgeBg = 'rgba(239, 68, 68, 0.15)';
+                    badgeColor = '#f87171';
+                    msgColor = '#fca5a5';
+                  } else if (log.type === 'start') {
+                    badgeBg = 'rgba(16, 185, 129, 0.15)';
+                    badgeColor = '#34d399';
+                  } else if (log.type === 'final') {
+                    badgeBg = 'rgba(59, 130, 246, 0.15)';
+                    badgeColor = '#60a5fa';
+                  } else if (log.type === 'interim') {
+                    badgeBg = 'rgba(245, 158, 11, 0.15)';
+                    badgeColor = '#fbbf24';
+                  } else if (log.type === 'end') {
+                    badgeBg = 'rgba(139, 92, 246, 0.15)';
+                    badgeColor = '#a78bfa';
+                  }
+
+                  return React.createElement('div', {
+                    key: index,
+                    style: {
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      gap: '12px',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: 'rgba(255, 255, 255, 0.02)',
+                      borderLeft: `3px solid ${badgeColor}`,
+                      fontSize: '13px',
+                      lineHeight: '1.4',
+                      textAlign: 'left'
+                    }
+                  },
+                    // Time
+                    React.createElement('span', { style: { color: '#6b7280', flexShrink: 0 } }, log.time),
+                    // Type Badge
+                    React.createElement('span', {
+                      style: {
+                        backgroundColor: badgeBg,
+                        color: badgeColor,
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        fontSize: '10px',
+                        textTransform: 'uppercase',
+                        fontWeight: 'bold',
+                        flexShrink: 0
+                      }
+                    }, log.type),
+                    // Message & Data
+                    React.createElement('div', { style: { flex: 1 } },
+                      React.createElement('span', { style: { color: msgColor } }, log.message),
+                      log.data && React.createElement('pre', {
+                        style: {
+                          margin: '4px 0 0 0',
+                          padding: '4px 8px',
+                          backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                          borderRadius: '4px',
+                          fontSize: '11px',
+                          color: '#9ca3af',
+                          overflowX: 'auto',
+                          whiteSpace: 'pre-wrap',
+                          wordBreak: 'break-all',
+                          textAlign: 'left'
+                        }
+                      }, log.data)
+                    )
+                  );
+                })
+          )
+        )
         ),
         
         // Modales de Ayuda
