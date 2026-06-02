@@ -829,7 +829,7 @@
         // Configuraciones específicas para móviles
         return {
           continuous: false,
-          interimResults: false,
+          interimResults: true,
           maxAlternatives: 1,
           timeouts: {
             restart: 1000,
