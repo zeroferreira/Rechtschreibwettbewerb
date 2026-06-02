@@ -196,12 +196,22 @@
         return React.createElement('div', { className: 'flex items-center justify-center gap-6 mt-2' },
           React.createElement('div', { className: 'flex flex-col items-center' },
             React.createElement('div', { className: 'text-sm text-yellow-300 font-mono tracking-wider font-semibold' }, ukPhonetic),
-            React.createElement('div', { className: 'mt-1 flex items-center justify-center w-6 h-6 rounded-full bg-black/40 border border-white/20 shadow-md text-xs cursor-default select-none', title: 'UK Pronunciation' }, '🇬🇧')
+            React.createElement('img', {
+              src: 'https://flagcdn.com/w80/gb.png',
+              alt: 'UK Flag',
+              title: 'UK Pronunciation',
+              className: 'mt-1 w-6 h-6 rounded-full object-cover border border-white/25 shadow-md cursor-default select-none'
+            })
           ),
           React.createElement('div', { className: 'text-slate-500 font-bold text-sm self-start mt-0.5' }, '—'),
           React.createElement('div', { className: 'flex flex-col items-center' },
             React.createElement('div', { className: 'text-sm text-yellow-300 font-mono tracking-wider font-semibold' }, usPhonetic),
-            React.createElement('div', { className: 'mt-1 flex items-center justify-center w-6 h-6 rounded-full bg-black/40 border border-white/20 shadow-md text-xs cursor-default select-none', title: 'US Pronunciation' }, '🇺🇸')
+            React.createElement('img', {
+              src: 'https://flagcdn.com/w80/us.png',
+              alt: 'US Flag',
+              title: 'US Pronunciation',
+              className: 'mt-1 w-6 h-6 rounded-full object-cover border border-white/25 shadow-md cursor-default select-none'
+            })
           )
         );
       }
