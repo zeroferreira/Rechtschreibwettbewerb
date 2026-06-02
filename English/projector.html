@@ -59,7 +59,8 @@
       align-items: center;
       box-shadow: 0 20px 40px rgba(0,0,0,0.3);
       backdrop-filter: blur(20px);
-      z-index: 10;
+      position: relative;
+      z-index: 100;
       animation: slideDown 0.6s ease-out;
     }
 
@@ -90,6 +91,17 @@
       align-items: center;
       justify-content: center;
       z-index: 10;
+      overflow: hidden;
+    }
+
+    /* Inner wrapper that receives the scale transform */
+    #main-scale-inner {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transform-origin: center center;
     }
 
     .subtitle {
@@ -434,6 +446,7 @@
   </header>
 
   <main id="main-scalable">
+    <div id="main-scale-inner">
     <div id="game-content" style="display: none; width: 100%; text-align: center;">
       <div class="subtitle">Word to Spell</div>
       <div class="target-word" id="target-word-display"></div>
@@ -453,6 +466,7 @@
     <div id="waiting-screen" class="waiting-message">
       Waiting for word selection...
     </div>
+    </div><!-- /#main-scale-inner -->
   </main>
 
   <footer>
@@ -493,7 +507,7 @@
     const sizeSlider = document.getElementById('size-slider');
     const sizeLabel  = document.getElementById('size-value-label');
     const sizeReset  = document.getElementById('size-reset');
-    const mainEl     = document.getElementById('main-scalable');
+    const mainEl     = document.getElementById('main-scale-inner');
 
     const STORAGE_KEY = 'projector_scale';
     const DEFAULT_SCALE = 100;
@@ -501,7 +515,6 @@
     function applyScale(pct) {
       const scale = pct / 100;
       mainEl.style.transform = `scale(${scale})`;
-      mainEl.style.transformOrigin = 'center center';
       sizeLabel.textContent = pct + '%';
       const min = Number(sizeSlider.min);
       const max = Number(sizeSlider.max);
