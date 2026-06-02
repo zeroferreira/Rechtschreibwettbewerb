@@ -6309,7 +6309,7 @@
         }
 
         const target = currentWord.word.toLowerCase();
-        const spoken = spokenText.toLowerCase().trim();
+        const spoken = spokenText.trim();
         const letters = [];
 
         for (let i = 0; i < Math.max(target.length, spoken.length); i++) {
@@ -6319,7 +6319,7 @@
           let letterClass = 'inline-block text-lg sm:text-xl lg:text-2xl font-mono font-bold mx-1 px-2 py-2 rounded-lg transition-all duration-300 ';
           
           if (i < spoken.length) {
-            if (spokenLetter === targetLetter) {
+            if (spokenLetter.toLowerCase() === targetLetter.toLowerCase()) {
               letterClass += 'text-green-700 bg-green-100 border-2 border-green-300';
             } else {
               letterClass += 'text-red-700 bg-red-100 border-2 border-red-300 animate-pulse';
