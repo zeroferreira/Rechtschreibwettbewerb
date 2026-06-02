@@ -143,7 +143,7 @@
     const [filterSensitivity, setFilterSensitivity] = useState('medium');
     
     // Debug console
-    const [showDebug, setShowDebug] = useState(false);
+    const [showDebug, setShowDebug] = useState(true);
     const [debugLogs, setDebugLogs] = useState([]);
     const debugLogsRef = React.useRef([]);
     const debugTapCountRef = React.useRef(0);
