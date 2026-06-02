@@ -1040,8 +1040,7 @@
       }
       
       let isManualStop = false;
-      let lastProcessedLength = 0; // Para evitar procesar el mismo texto múltiples veces
-      let lastProcessedSegmentIndex = -1; // Para rastrear el segmento actual en modo continuo
+      let lastInterimText = ''; // Para rastrear el texto provisional e implementar rollback robusto
       let noiseFilter = []; // Buffer para filtrar ruido
       let contextBuffer = ''; // Buffer de contexto para mejor precisión
       let confidenceThreshold = 0.3; // Umbral de confianza mínimo
@@ -1094,31 +1093,33 @@
         setIsListening(true);
         setRecognitionReady(true);
         isManualStop = false;
-        lastProcessedLength = 0;
-        lastProcessedSegmentIndex = -1;
+        lastInterimText = '';
         resetIdleTimeout();
       };
       
       // Variables para control en modo continuo
       let processedContent = new Set();
       let lastFinalTranscript = '';
-      let lastInterimText = ''; // El último texto interim mostrado (para reemplazarlo por el final)
       
       recognitionInstance.onresult = (event) => {
         resetIdleTimeout();
-        // En modo continuous, cada resultado tiene su propio índice
-        // Procesamos SÓLO los resultados nuevos desde event.resultIndex
+        
+        let interimTranscript = '';
+        let finalTranscript = '';
+        
+        // En modo continuous, procesamos los resultados
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript.toLowerCase();
+          const transcript = event.results[i][0].transcript;
           const isFinal = event.results[i].isFinal;
 
           // Evitar que el micrófono capture la palabra completa pronunciada al inicio/final
           if (currentWordRef.current && currentWordRef.current.word) {
-            const cleanTranscript = transcript.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’']/g, '').replace(/[^a-z]/g, '');
+            const cleanTranscript = transcript.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’']/g, '').replace(/[^a-z]/g, '');
             const cleanTarget = currentWordRef.current.word.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’']/g, '').replace(/[^a-z]/g, '');
             
             // Separar palabras reales eliminando puntuación del transcrito
             const wordsInTranscript = transcript
+              .toLowerCase()
               .replace(/[^a-zäöüßéèàùçâêîôûëïüÿæœ\s]/g, '')
               .trim()
               .split(/\s+/);
@@ -1141,30 +1142,78 @@
             }
           }
           
-          if (lastProcessedSegmentIndex !== i) {
-            lastProcessedSegmentIndex = i;
-            lastProcessedLength = 0;
+          if (isFinal) {
+            finalTranscript += transcript;
+          } else {
+            interimTranscript += transcript;
           }
+        }
+        
+        // Si hay un resultado final, lo procesamos y lo añadimos al texto estable
+        if (finalTranscript) {
+          console.log('✅ Resultado FINAL:', finalTranscript);
+          if (typeof addDebugLog === 'function') addDebugLog('final', `✅ FINAL: "${finalTranscript.trim()}"`);
           
-          const currentText = transcript;
-          if (currentText.length > lastProcessedLength) {
-            const newPortion = currentText.substring(lastProcessedLength);
-            console.log(`[Seg ${i}] Procesando porción nueva: "${newPortion}" (de "${currentText}")`);
-            
-            const result = processSpokenInput(newPortion);
-            if (result === 'DELETE') {
-              setSpokenText(prev => prev.slice(0, -1));
-              if (typeof addDebugLog === 'function') addDebugLog(isFinal ? 'final' : 'interim', '🔤 Letra eliminada (DELETE)');
-            } else if (result === 'CLEAR') {
-              setSpokenText('');
-              if (typeof addDebugLog === 'function') addDebugLog(isFinal ? 'final' : 'interim', '🔤 Deletreo limpiado (CLEAR)');
-            } else if (result) {
-              setSpokenText(prev => prev + result);
-              console.log('🔤 Letra(s) añadida:', result);
-              if (typeof addDebugLog === 'function') addDebugLog(isFinal ? 'final' : 'interim', `🔤 Letra añadida: "${result}"`);
+          const result = processSpokenInput(finalTranscript.toLowerCase().trim());
+          
+          setSpokenText(prev => {
+            // Limpieza del estado previo si termina con el último interim
+            let base = prev;
+            if (lastInterimText && prev.endsWith(lastInterimText)) {
+              base = prev.substring(0, prev.length - lastInterimText.length);
             }
+
+            const targetWord = currentWordRef.current?.word || '';
+            const newText = getProgressiveSpellingText(base, result, targetWord);
             
-            lastProcessedLength = currentText.length;
+            lastInterimText = ''; // Limpiamos el provisional
+            return newText;
+          });
+        } 
+        // Si solo hay resultado provisional, lo mostramos en tiempo real
+        else if (interimTranscript) {
+          console.log('🔄 Resultado INTERIM:', interimTranscript);
+          if (typeof addDebugLog === 'function') addDebugLog('interim', `🔄 INTERIM: "${interimTranscript.trim()}"`);
+          
+          const result = processSpokenInput(interimTranscript.toLowerCase().trim());
+          
+          if (result && result !== lastInterimText) {
+            setSpokenText(prev => {
+              let base = prev;
+              if (lastInterimText && prev.endsWith(lastInterimText)) {
+                base = prev.substring(0, prev.length - lastInterimText.length);
+              }
+              
+              // DEDUPLICACIÓN PARA INTERIM (prefix-suffix overlap detection)
+              let textToAdd = result;
+              
+              if (base.endsWith(result)) {
+                textToAdd = '';
+              } else {
+                for (let i = Math.min(base.length, result.length); i > 0; i--) {
+                  const suffix = base.slice(-i);
+                  const prefix = result.slice(0, i);
+                  if (suffix === prefix) {
+                    textToAdd = result.slice(i);
+                    break;
+                  }
+                }
+              }
+
+              lastInterimText = result; // Guardamos el nuevo provisional
+              const newText = base + textToAdd;
+              
+              // Verificación en tiempo real si coincide con la palabra completa
+              if (newText.toLowerCase().trim() === currentWordRef.current?.word.toLowerCase()) {
+                setIsCorrect(true);
+                setShowSuccessModal(true);
+                if (recognition && recognition.manualStop) {
+                  recognition.manualStop();
+                }
+              }
+              
+              return newText;
+            });
           }
         }
       };
