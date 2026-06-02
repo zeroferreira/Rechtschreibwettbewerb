@@ -300,16 +300,152 @@
       from { opacity: 0.8; transform: scale(0.98); }
       to { opacity: 1; transform: scale(1.02); }
     }
+
+    /* ── Size Control Panel ─────────────────────────────── */
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      position: relative;
+    }
+
+    .gear-btn {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      color: rgba(255, 255, 255, 0.55);
+      width: 2.8rem;
+      height: 2.8rem;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.3rem;
+      transition: all 0.2s ease;
+      flex-shrink: 0;
+    }
+    .gear-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: #fff;
+      transform: rotate(30deg);
+    }
+    .gear-btn.active {
+      background: rgba(96, 165, 250, 0.15);
+      border-color: rgba(96, 165, 250, 0.4);
+      color: #60a5fa;
+    }
+
+    .size-panel {
+      display: none;
+      position: absolute;
+      top: calc(100% + 0.8rem);
+      right: 0;
+      background: rgba(15, 10, 35, 0.96);
+      border: 1px solid rgba(96, 165, 250, 0.25);
+      border-radius: 18px;
+      padding: 1.4rem 1.8rem;
+      min-width: 280px;
+      backdrop-filter: blur(20px);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+      z-index: 100;
+      animation: popIn 0.2s ease;
+    }
+    .size-panel.open {
+      display: block;
+    }
+    .size-panel-label {
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      color: rgba(255,255,255,0.4);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+    }
+    .size-row {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .size-icon {
+      font-size: 1rem;
+      color: rgba(255,255,255,0.35);
+      flex-shrink: 0;
+    }
+    .size-icon.big {
+      font-size: 1.6rem;
+      color: rgba(255,255,255,0.55);
+    }
+    input[type=range]#size-slider {
+      -webkit-appearance: none;
+      flex: 1;
+      height: 6px;
+      border-radius: 99px;
+      background: linear-gradient(to right, #60a5fa var(--pct, 50%), rgba(255,255,255,0.1) var(--pct, 50%));
+      outline: none;
+      cursor: pointer;
+    }
+    input[type=range]#size-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #60a5fa;
+      box-shadow: 0 0 10px rgba(96,165,250,0.6);
+      border: 2px solid #fff;
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    input[type=range]#size-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+    .size-value {
+      font-size: 1rem;
+      font-weight: 800;
+      color: #60a5fa;
+      min-width: 3.2rem;
+      text-align: right;
+    }
+    .size-reset {
+      margin-top: 1rem;
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      color: rgba(255,255,255,0.5);
+      border-radius: 10px;
+      padding: 0.5rem;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .size-reset:hover {
+      background: rgba(255,255,255,0.1);
+      color: #fff;
+    }
   </style>
 </head>
 <body>
 
   <header>
     <h1 id="header-title">Contest View</h1>
-    <div class="progress" id="progress-indicator">Words used: 0 / 0</div>
+    <div class="header-right">
+      <div class="progress" id="progress-indicator">Words used: 0 / 0</div>
+      <button class="gear-btn" id="gear-btn" title="Adjust display size">⚙️</button>
+      <div class="size-panel" id="size-panel">
+        <div class="size-panel-label">Display Size</div>
+        <div class="size-row">
+          <span class="size-icon">A</span>
+          <input type="range" id="size-slider" min="50" max="180" step="5" value="100">
+          <span class="size-icon big">A</span>
+          <span class="size-value" id="size-value-label">100%</span>
+        </div>
+        <button class="size-reset" id="size-reset">↺ Reset to default</button>
+      </div>
+    </div>
   </header>
 
-  <main>
+  <main id="main-scalable">
     <div id="game-content" style="display: none; width: 100%; text-align: center;">
       <div class="subtitle">Word to Spell</div>
       <div class="target-word" id="target-word-display"></div>
@@ -347,6 +483,56 @@
     const alertWrapper = document.getElementById('alert-wrapper');
     const micIndicator = document.getElementById('mic-indicator');
     const targetWordDisplay = document.getElementById('target-word-display');
+
+    // ── Size slider logic ─────────────────────────────────
+    const gearBtn    = document.getElementById('gear-btn');
+    const sizePanel  = document.getElementById('size-panel');
+    const sizeSlider = document.getElementById('size-slider');
+    const sizeLabel  = document.getElementById('size-value-label');
+    const sizeReset  = document.getElementById('size-reset');
+    const mainEl     = document.getElementById('main-scalable');
+
+    const STORAGE_KEY = 'projector_scale';
+    const DEFAULT_SCALE = 100;
+
+    function applyScale(pct) {
+      const scale = pct / 100;
+      mainEl.style.transform = `scale(${scale})`;
+      mainEl.style.transformOrigin = 'center center';
+      sizeLabel.textContent = pct + '%';
+      // Update the gradient fill on the track
+      const min = Number(sizeSlider.min);
+      const max = Number(sizeSlider.max);
+      const ratio = ((pct - min) / (max - min)) * 100;
+      sizeSlider.style.setProperty('--pct', ratio + '%');
+      localStorage.setItem(STORAGE_KEY, pct);
+    }
+
+    // Restore saved scale on load
+    const savedScale = parseInt(localStorage.getItem(STORAGE_KEY)) || DEFAULT_SCALE;
+    sizeSlider.value = savedScale;
+    applyScale(savedScale);
+
+    sizeSlider.addEventListener('input', () => applyScale(Number(sizeSlider.value)));
+
+    sizeReset.addEventListener('click', () => {
+      sizeSlider.value = DEFAULT_SCALE;
+      applyScale(DEFAULT_SCALE);
+    });
+
+    gearBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      sizePanel.classList.toggle('open');
+      gearBtn.classList.toggle('active');
+    });
+
+    // Close panel when clicking outside
+    document.addEventListener('click', () => {
+      sizePanel.classList.remove('open');
+      gearBtn.classList.remove('active');
+    });
+    sizePanel.addEventListener('click', (e) => e.stopPropagation());
+    // ─────────────────────────────────────────────────────
 
     // Create broadcast channel
     const bc = new BroadcastChannel('spelling_bee_sync');
