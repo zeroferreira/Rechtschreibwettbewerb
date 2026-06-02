@@ -26,7 +26,7 @@
               src: 'https://flagcdn.com/w80/gb.png',
               alt: 'UK Flag',
               title: 'UK Pronunciation',
-              className: 'mt-1 w-6 h-6 rounded-full object-cover border border-white/25 shadow-md cursor-default select-none'
+              className: 'mt-1 w-6 h-6 rounded-full object-cover border-2 border-slate-800 shadow-md cursor-default select-none'
             })
           ),
           React.createElement('div', { className: 'text-slate-500 font-bold text-sm self-start mt-0.5' }, '—'),
@@ -36,12 +36,30 @@
               src: 'https://flagcdn.com/w80/us.png',
               alt: 'US Flag',
               title: 'US Pronunciation',
-              className: 'mt-1 w-6 h-6 rounded-full object-cover border border-white/25 shadow-md cursor-default select-none'
+              className: 'mt-1 w-6 h-6 rounded-full object-cover border-2 border-slate-800 shadow-md cursor-default select-none'
             })
           )
         );
       }
-      return React.createElement('div', { className: 'text-sm text-yellow-300/80 font-mono tracking-wider font-semibold' }, phonetic);
+      
+      // Si la pronunciación es idéntica en UK y US
+      return React.createElement('div', { className: 'flex flex-col items-center mt-2' },
+        React.createElement('div', { className: 'text-sm text-yellow-300/80 font-mono tracking-wider font-semibold' }, phonetic),
+        React.createElement('div', { className: 'flex items-center justify-center mt-1.5 relative h-6 w-10' },
+          React.createElement('img', {
+            src: 'https://flagcdn.com/w80/gb.png',
+            alt: 'UK Flag',
+            title: 'Same Pronunciation (UK & US)',
+            className: 'w-6 h-6 rounded-full object-cover border-2 border-slate-800 shadow-md absolute left-0 z-10 cursor-default select-none'
+          }),
+          React.createElement('img', {
+            src: 'https://flagcdn.com/w80/us.png',
+            alt: 'US Flag',
+            title: 'Same Pronunciation (UK & US)',
+            className: 'w-6 h-6 rounded-full object-cover border-2 border-slate-800 shadow-md absolute right-0 z-0 cursor-default select-none'
+          })
+        )
+      );
     };
 
     const StarrySky = () => {
