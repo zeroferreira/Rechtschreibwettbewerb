@@ -337,17 +337,15 @@
 
     .size-panel {
       display: none;
-      position: absolute;
-      top: calc(100% + 0.8rem);
-      right: 0;
-      background: rgba(15, 10, 35, 0.96);
-      border: 1px solid rgba(96, 165, 250, 0.25);
+      position: fixed;
+      background: rgba(15, 10, 35, 0.97);
+      border: 1px solid rgba(96, 165, 250, 0.3);
       border-radius: 18px;
       padding: 1.4rem 1.8rem;
       min-width: 280px;
       backdrop-filter: blur(20px);
-      box-shadow: 0 20px 50px rgba(0,0,0,0.6);
-      z-index: 100;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.7);
+      z-index: 9999;
       animation: popIn 0.2s ease;
     }
     .size-panel.open {
@@ -432,16 +430,6 @@
     <div class="header-right">
       <div class="progress" id="progress-indicator">Words used: 0 / 0</div>
       <button class="gear-btn" id="gear-btn" title="Adjust display size">⚙️</button>
-      <div class="size-panel" id="size-panel">
-        <div class="size-panel-label">Display Size</div>
-        <div class="size-row">
-          <span class="size-icon">A</span>
-          <input type="range" id="size-slider" min="50" max="180" step="5" value="100">
-          <span class="size-icon big">A</span>
-          <span class="size-value" id="size-value-label">100%</span>
-        </div>
-        <button class="size-reset" id="size-reset">↺ Reset to default</button>
-      </div>
     </div>
   </header>
 
@@ -485,8 +473,23 @@
     const targetWordDisplay = document.getElementById('target-word-display');
 
     // ── Size slider logic ─────────────────────────────────
+    // The panel lives in <body> so it escapes the header's stacking context
+    const sizePanel = document.createElement('div');
+    sizePanel.id = 'size-panel';
+    sizePanel.className = 'size-panel';
+    sizePanel.innerHTML = `
+      <div class="size-panel-label">Display Size</div>
+      <div class="size-row">
+        <span class="size-icon">A</span>
+        <input type="range" id="size-slider" min="50" max="180" step="5" value="100">
+        <span class="size-icon big">A</span>
+        <span class="size-value" id="size-value-label">100%</span>
+      </div>
+      <button class="size-reset" id="size-reset">↺ Reset to default</button>
+    `;
+    document.body.appendChild(sizePanel);
+
     const gearBtn    = document.getElementById('gear-btn');
-    const sizePanel  = document.getElementById('size-panel');
     const sizeSlider = document.getElementById('size-slider');
     const sizeLabel  = document.getElementById('size-value-label');
     const sizeReset  = document.getElementById('size-reset');
@@ -500,12 +503,18 @@
       mainEl.style.transform = `scale(${scale})`;
       mainEl.style.transformOrigin = 'center center';
       sizeLabel.textContent = pct + '%';
-      // Update the gradient fill on the track
       const min = Number(sizeSlider.min);
       const max = Number(sizeSlider.max);
       const ratio = ((pct - min) / (max - min)) * 100;
-      sizeSlider.style.setProperty('--pct', ratio + '%');
+      sizeSlider.style.background =
+        `linear-gradient(to right, #60a5fa ${ratio}%, rgba(255,255,255,0.1) ${ratio}%)`;
       localStorage.setItem(STORAGE_KEY, pct);
+    }
+
+    function positionPanel() {
+      const rect = gearBtn.getBoundingClientRect();
+      sizePanel.style.top  = (rect.bottom + 10) + 'px';
+      sizePanel.style.right = (window.innerWidth - rect.right) + 'px';
     }
 
     // Restore saved scale on load
@@ -515,23 +524,32 @@
 
     sizeSlider.addEventListener('input', () => applyScale(Number(sizeSlider.value)));
 
-    sizeReset.addEventListener('click', () => {
+    sizeReset.addEventListener('click', (e) => {
+      e.stopPropagation();
       sizeSlider.value = DEFAULT_SCALE;
       applyScale(DEFAULT_SCALE);
     });
 
     gearBtn.addEventListener('click', (e) => {
       e.stopPropagation();
-      sizePanel.classList.toggle('open');
-      gearBtn.classList.toggle('active');
+      const isOpen = sizePanel.classList.contains('open');
+      if (isOpen) {
+        sizePanel.classList.remove('open');
+        gearBtn.classList.remove('active');
+      } else {
+        positionPanel();
+        sizePanel.classList.add('open');
+        gearBtn.classList.add('active');
+      }
     });
 
     // Close panel when clicking outside
-    document.addEventListener('click', () => {
-      sizePanel.classList.remove('open');
-      gearBtn.classList.remove('active');
+    document.addEventListener('click', (e) => {
+      if (!sizePanel.contains(e.target) && e.target !== gearBtn) {
+        sizePanel.classList.remove('open');
+        gearBtn.classList.remove('active');
+      }
     });
-    sizePanel.addEventListener('click', (e) => e.stopPropagation());
     // ─────────────────────────────────────────────────────
 
     // Create broadcast channel
