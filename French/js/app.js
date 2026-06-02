@@ -831,30 +831,16 @@
 
     // Configuración optimizada para móviles
     const optimizeForMobile = () => {
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      
-      if (isMobile) {
-        // Configuraciones específicas para móviles
-        return {
-          continuous: false,
-          interimResults: true,
-          maxAlternatives: 1,
-          timeouts: {
-            restart: 50,
-            retry: 500,
-            error: 200
-          }
-        };
-      }
-      
+      // continuous: true en TODOS los dispositivos para evitar la ventana sorda
+      // al reiniciar el micrófono entre letras (especialmente con pausas largas)
       return {
         continuous: true,
         interimResults: true,
         maxAlternatives: 1,
         timeouts: {
-          restart: 50,
-          retry: 500,
-          error: 200
+          restart: 300,
+          retry: 1000,
+          error: 500
         }
       };
     };
@@ -1021,68 +1007,51 @@
         lastProcessedLength = 0;
       };
       
-      // Variables para control de duplicación
+      // Variables para control en modo continuo
       let processedContent = new Set();
       let lastFinalTranscript = '';
+      let lastInterimText = ''; // El último texto interim mostrado (para reemplazarlo por el final)
       
       recognitionInstance.onresult = (event) => {
-        console.log('📝 Resultado recibido:', event.results);
-        
-        let interimTranscript = '';
-        let finalTranscript = '';
-        
-        // Procesar todos los resultados
+        // En modo continuous, cada resultado tiene su propio índice
+        // Procesamos SÓLO los resultados nuevos desde event.resultIndex
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript;
+          const transcript = event.results[i][0].transcript.toLowerCase().trim();
+          const isFinal = event.results[i].isFinal;
           
-          if (event.results[i].isFinal) {
-            finalTranscript += transcript;
+          if (isFinal) {
+            console.log('✅ Resultado FINAL:', transcript);
+            // Si ya mostramos este texto como interim, no volver a procesarlo
+            if (transcript !== lastInterimText) {
+              const result = processSpokenInput(transcript);
+              if (result === 'DELETE') {
+                setSpokenText(prev => prev.slice(0, -1));
+              } else if (result === 'CLEAR') {
+                setSpokenText('');
+              } else if (result) {
+                setSpokenText(prev => prev + result);
+                console.log('🔤 Letra(s) final confirmada:', result);
+              }
+            } else {
+              console.log('🔄 Final coincide con interim ya mostrado, no duplicar');
+            }
+            lastInterimText = ''; // Limpiar el interim tracking
           } else {
-            interimTranscript += transcript;
-          }
-        }
-        
-        // Procesar resultados intermedios
-        if (interimTranscript) {
-          const currentText = interimTranscript.toLowerCase().trim();
-          console.log('🔄 Texto intermedio:', currentText);
-          
-          if (currentText.length > lastProcessedLength) {
-            const newPortion = currentText.substring(lastProcessedLength);
-            const result = processSpokenInput(newPortion);
-            
-            if (result === 'DELETE') {
-              setSpokenText(prev => prev.slice(0, -1));
-              console.log('🗑️ Eliminando última letra');
-            } else if (result === 'CLEAR') {
-              setSpokenText('');
-              console.log('🧹 Limpiando texto');
-            } else if (result) {
-              setSpokenText(prev => prev + result);
-              console.log('🔤 Letras agregadas:', result);
-            }
-            lastProcessedLength = currentText.length;
-          }
-        }
-        
-        // Procesar resultados finales
-        if (finalTranscript) {
-          const currentText = finalTranscript.toLowerCase().trim();
-          console.log('✅ Texto final:', currentText);
-          
-          if (currentText.length > lastProcessedLength) {
-            const newPortion = currentText.substring(lastProcessedLength);
-            const result = processSpokenInput(newPortion);
-            
-            if (result === 'DELETE') {
-              setSpokenText(prev => prev.slice(0, -1));
-            } else if (result === 'CLEAR') {
-              setSpokenText('');
-            } else if (result) {
-              setSpokenText(prev => prev + result);
+            console.log('🔄 Resultado INTERIM:', transcript);
+            // Solo procesar si es diferente al último interim
+            if (transcript !== lastInterimText) {
+              const result = processSpokenInput(transcript);
+              if (result === 'DELETE') {
+                setSpokenText(prev => prev.slice(0, -1));
+              } else if (result === 'CLEAR') {
+                setSpokenText('');
+              } else if (result) {
+                setSpokenText(prev => prev + result);
+                console.log('🔤 Letra(s) interim mostrada:', result);
+              }
+              lastInterimText = transcript;
             }
           }
-          lastProcessedLength = 0;
         }
       };
       
