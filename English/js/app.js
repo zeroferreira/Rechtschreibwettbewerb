@@ -5699,9 +5699,10 @@
 
         return React.createElement('div', {
           className: 'fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4',
-          style: { animation: 'modalGrow 0.5s ease-out' }
+          style: { animation: 'fadeIn 0.25s ease-out' }
         }, React.createElement('div', { 
-          className: 'bg-gradient-to-br from-green-400 to-green-600 text-white p-6 sm:p-8 rounded-2xl shadow-2xl text-center transform scale-100 w-full max-w-sm sm:max-w-md' 
+          className: 'bg-gradient-to-br from-green-400 to-green-600 text-white p-6 sm:p-8 rounded-2xl shadow-2xl text-center transform scale-100 w-full max-w-sm sm:max-w-md',
+          style: { animation: 'modalGrow 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)' }
         },
           React.createElement('h2', { className: 'text-3xl sm:text-5xl font-bold mb-3 sm:mb-4' }, 'Correct!'),
           React.createElement('button', {
@@ -5771,9 +5772,10 @@
 
         return React.createElement('div', {
           className: 'fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-4',
-          style: { animation: 'modalGrow 0.5s ease-out' }
+          style: { animation: 'fadeIn 0.25s ease-out' }
         }, React.createElement('div', { 
-          className: 'bg-gradient-to-br from-red-400 to-red-600 text-white p-6 sm:p-8 rounded-2xl shadow-2xl text-center transform scale-100 w-full max-w-sm sm:max-w-md' 
+          className: 'bg-gradient-to-br from-red-400 to-red-600 text-white p-6 sm:p-8 rounded-2xl shadow-2xl text-center transform scale-100 w-full max-w-sm sm:max-w-md',
+          style: { animation: 'modalGrow 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)' }
         },
           React.createElement('h2', { className: 'text-3xl sm:text-5xl font-bold mb-3 sm:mb-4' }, 'Incorrect!'),
           React.createElement('p', { className: 'text-base sm:text-xl mb-2' }, `Try spelling: ${currentWord.word}`),
