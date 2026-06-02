@@ -1103,6 +1103,27 @@
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript.toLowerCase().trim();
           const isFinal = event.results[i].isFinal;
+
+          // Evitar que el micrófono capture la palabra completa pronunciada al inicio/final
+          if (currentWordRef.current && currentWordRef.current.word) {
+            const cleanTranscript = transcript.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’']/g, '').replace(/[^a-z]/g, '');
+            const cleanTarget = currentWordRef.current.word.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’']/g, '').replace(/[^a-z]/g, '');
+            
+            // Separar palabras reales eliminando puntuación del transcrito
+            const wordsInTranscript = transcript
+              .toLowerCase()
+              .replace(/[^a-zäöüßéèàùçâêîôûëïüÿæœ\s]/g, '')
+              .trim()
+              .split(/\s+/);
+            
+            // Si es una única palabra de longitud > 1 (no letras individuales separadas por espacios)
+            if (wordsInTranscript.length === 1 && wordsInTranscript[0].length > 1) {
+              if (cleanTranscript === cleanTarget) {
+                console.log('🚫 Palabra completa detectada al inicio/final, ignorando:', transcript);
+                continue;
+              }
+            }
+          }
           
           if (isFinal) {
             console.log('✅ Resultado FINAL:', transcript);
