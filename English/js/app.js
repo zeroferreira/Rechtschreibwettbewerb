@@ -275,11 +275,11 @@
       if (isMobile) {
         // Configuraciones específicas para móviles
         return {
-          continuous: true, // ¡Cambiado a true! Para intentar mantener el micrófono abierto
-          interimResults: true,
-          maxAlternatives: 3, // Reducir para mejor rendimiento
+          continuous: false,
+          interimResults: false,
+          maxAlternatives: 1,
           timeouts: {
-            restart: 1000, // Reducimos el tiempo de reinicio, ya que ahora es continuo
+            restart: 1000,
             retry: 3000,
             error: 1500
           }
@@ -289,7 +289,7 @@
       return {
         continuous: true,
         interimResults: true,
-        maxAlternatives: 5,
+        maxAlternatives: 1,
         timeouts: {
           restart: 300,
           retry: 1000,
@@ -463,120 +463,65 @@
       // Variables para control de duplicación
       let processedContent = new Set();
       let lastFinalTranscript = '';
-      let lastInterimResult = ''; // Para gestionar el texto provisional
-      let lastResultTimestamp = 0; // Timestamp del último resultado procesado
       
       recognitionInstance.onresult = (event) => {
-        // Detectar dispositivo móvil
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        const now = Date.now();
+        console.log('📝 Resultado recibido:', event.results);
         
         let interimTranscript = '';
         let finalTranscript = '';
-
+        
+        // Procesar todos los resultados
         for (let i = event.resultIndex; i < event.results.length; i++) {
+          const transcript = event.results[i][0].transcript;
+          
           if (event.results[i].isFinal) {
-            finalTranscript += event.results[i][0].transcript;
+            finalTranscript += transcript;
           } else {
-            interimTranscript += event.results[i][0].transcript;
+            interimTranscript += transcript;
           }
         }
-
-        // En móviles, evitar procesar resultados demasiado rápido (debounce de 500ms)
-        // Solo si el resultado es igual al anterior
-        if (isMobile) {
-            if (finalTranscript && finalTranscript === lastFinalTranscript && (now - lastResultTimestamp < 500)) {
-                return;
-            }
-            if (interimTranscript && interimTranscript === lastInterimResult && (now - lastResultTimestamp < 500)) {
-                return;
-            }
-        }
-
-        // Actualizar timestamp
-        lastResultTimestamp = now;
-
-        // En móviles, ser más selectivo con los resultados provisionales
-        if (isMobile && interimTranscript && interimTranscript === lastInterimResult) {
-          return; // Evitar procesar el mismo resultado provisional
-        }
-
-        // Si hay un resultado final, lo procesamos y lo añadimos al texto estable
-        if (finalTranscript) {
-          // Evitar duplicados exactos consecutivos si ocurren muy rápido
-          if (finalTranscript === lastFinalTranscript && (now - lastResultTimestamp < 1000)) {
-              return;
-          }
-          lastFinalTranscript = finalTranscript; // Actualizar último final transcript
+        
+        // Procesar resultados intermedios
+        if (interimTranscript) {
+          const currentText = interimTranscript.toLowerCase().trim();
+          console.log('🔄 Texto intermedio:', currentText);
           
-          const result = processSpokenInput(finalTranscript.toLowerCase().trim());
-          
-          setSpokenText(prev => {
-            // Limpieza robusta del estado previo si termina con el último interim
-            let base = prev;
-            if (lastInterimResult && prev.endsWith(lastInterimResult)) {
-                base = prev.substring(0, prev.length - lastInterimResult.length);
-            }
-
-            const targetWord = currentWordRef.current?.word || '';
-            const newText = getProgressiveSpellingText(base, result, targetWord);
+          if (currentText.length > lastProcessedLength) {
+            const newPortion = currentText.substring(lastProcessedLength);
+            const result = processSpokenInput(newPortion);
             
-            lastInterimResult = ''; // Limpiamos el provisional
-            return newText;
-          });
-          
-          // Verificar éxito y error DESPUÉS de actualizar el texto
-          // Nota: Usamos setTimeout para verificar el estado actualizado, 
-          // pero como no tenemos acceso directo al 'newText' calculado dentro del setter aquí fuera,
-          // dependemos de que el efecto o la siguiente renderización lo maneje, 
-          // o inferimos el resultado.
-          // Para simplificar y evitar condiciones de carrera en la verificación,
-          // movemos la verificación a un useEffect que escuche cambios en 'spokenText'
-          // o simplemente confiamos en la verificación visual del usuario por ahora.
-        } 
-        // Si solo hay resultado provisional, lo mostramos en tiempo real SIN verificar errores
-        else if (interimTranscript) {
-          const result = processSpokenInput(interimTranscript.toLowerCase().trim());
-          
-          // Evitar duplicación en móviles
-          if (result && result !== lastInterimResult) {
-            setSpokenText(prev => {
-                let base = prev;
-                if (lastInterimResult && prev.endsWith(lastInterimResult)) {
-                    base = prev.substring(0, prev.length - lastInterimResult.length);
-                }
-              
-              // DEDUPLICACIÓN TAMBIÉN PARA INTERIM
-              let textToAdd = result;
-              
-              if (base.endsWith(result)) {
-                  textToAdd = '';
-              } else {
-                  for (let i = Math.min(base.length, result.length); i > 0; i--) {
-                      const suffix = base.slice(-i);
-                      const prefix = result.slice(0, i);
-                      if (suffix === prefix) {
-                          textToAdd = result.slice(i);
-                          break;
-                      }
-                  }
-              }
-
-              lastInterimResult = result; // Guardamos el nuevo provisional
-              const newText = base + textToAdd;
-              
-              if (newText.toLowerCase().trim() === currentWordRef.current?.word.toLowerCase()) {
-                setIsCorrect(true);
-                setShowSuccessModal(true);
-                if (recognition && recognition.manualStop) {
-                  recognition.manualStop();
-                }
-                return newText;
-              }
-              
-              return newText;
-            });
+            if (result === 'DELETE') {
+              setSpokenText(prev => prev.slice(0, -1));
+              console.log('🗑️ Eliminando última letra');
+            } else if (result === 'CLEAR') {
+              setSpokenText('');
+              console.log('🧹 Limpiando texto');
+            } else if (result) {
+              setSpokenText(prev => prev + result);
+              console.log('🔤 Letras agregadas:', result);
+            }
+            lastProcessedLength = currentText.length;
           }
+        }
+        
+        // Procesar resultados finales
+        if (finalTranscript) {
+          const currentText = finalTranscript.toLowerCase().trim();
+          console.log('✅ Texto final:', currentText);
+          
+          if (currentText.length > lastProcessedLength) {
+            const newPortion = currentText.substring(lastProcessedLength);
+            const result = processSpokenInput(newPortion);
+            
+            if (result === 'DELETE') {
+              setSpokenText(prev => prev.slice(0, -1));
+            } else if (result === 'CLEAR') {
+              setSpokenText('');
+            } else if (result) {
+              setSpokenText(prev => prev + result);
+            }
+          }
+          lastProcessedLength = 0;
         }
       };
       
@@ -1409,18 +1354,6 @@
       // Función simplificada SOLO para deletreo
       const processSpokenInput = (transcript) => {
         console.log('🔤 Procesando input:', transcript);
-        
-        // Verificar si parece deletreo
-        if (!isLikelySpelling(transcript)) {
-          console.log('🚫 No parece deletreo, ignorando:', transcript);
-          return '';
-        }
-        
-        // Filtrar palabras completas y conversación
-        if (containsCompleteWords(transcript)) {
-          console.log('🚫 Input ignorado por contener palabras completas o conversación');
-          return '';
-        }
         
         // Mapeo mejorado de letras
         const letterMap = {

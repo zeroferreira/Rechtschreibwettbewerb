@@ -828,11 +828,11 @@
       if (isMobile) {
         // Configuraciones específicas para móviles
         return {
-          continuous: false, // Mejor para móviles
-          interimResults: true,
-          maxAlternatives: 3, // Reducir para mejor rendimiento
+          continuous: false,
+          interimResults: false,
+          maxAlternatives: 1,
           timeouts: {
-            restart: 2000,
+            restart: 1000,
             retry: 3000,
             error: 1500
           }
@@ -842,7 +842,7 @@
       return {
         continuous: true,
         interimResults: true,
-        maxAlternatives: 5,
+        maxAlternatives: 1,
         timeouts: {
           restart: 300,
           retry: 1000,
@@ -1050,7 +1050,7 @@
               setSpokenText('');
               console.log('🧹 Limpiando texto');
             } else if (result) {
-              setSpokenText(prev => getProgressiveSpellingText(prev, result, currentWordRef.current?.word || ''));
+              setSpokenText(prev => prev + result);
               console.log('🔤 Letras agregadas:', result);
             }
             lastProcessedLength = currentText.length;
@@ -1071,7 +1071,7 @@
             } else if (result === 'CLEAR') {
               setSpokenText('');
             } else if (result) {
-              setSpokenText(prev => getProgressiveSpellingText(prev, result, currentWordRef.current?.word || ''));
+              setSpokenText(prev => prev + result);
             }
           }
           lastProcessedLength = 0;
@@ -1747,16 +1747,6 @@
     // Procesar input de voz en alemán
     const processSpokenInput = (transcript) => {
       console.log('🔤 Procesando input:', transcript);
-
-      if (containsCompleteWords(transcript)) {
-        console.log('🚫 Input ignorado por contener palabras completas o conversación');
-        return '';
-      }
-      
-      if (!isLikelySpelling(transcript)) {
-        console.log('🚫 No parece deletreo, ignorando:', transcript);
-        return '';
-      }
 
       const words = (transcript || '')
         .toLowerCase()
