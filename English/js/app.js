@@ -141,6 +141,22 @@
     const [recognitionConfidence, setRecognitionConfidence] = useState(0);
     const [lastRecognizedText, setLastRecognizedText] = useState('');
     const [filterSensitivity, setFilterSensitivity] = useState('medium');
+    
+    // Debug console
+    const [showDebug, setShowDebug] = useState(false);
+    const [debugLogs, setDebugLogs] = useState([]);
+    const debugLogsRef = React.useRef([]);
+    const addDebugLog = React.useCallback((type, message, data) => {
+      const entry = {
+        id: Date.now() + Math.random(),
+        time: new Date().toLocaleTimeString('es-MX', { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        type, // 'interim' | 'final' | 'start' | 'end' | 'error' | 'info'
+        message,
+        data: data ? JSON.stringify(data) : ''
+      };
+      debugLogsRef.current = [entry, ...debugLogsRef.current].slice(0, 80);
+      setDebugLogs([...debugLogsRef.current]);
+    }, []);
 
     // Estados para el sistema de Ayuda y Reportes
     const [showHelpMenu, setShowHelpMenu] = useState(false);
@@ -440,6 +456,7 @@
       
       recognitionInstance.onstart = () => {
         console.log('🎤 Reconocimiento INICIADO');
+        addDebugLog('start', '🎤 Mic INICIADO');
         setIsListening(true);
         setRecognitionReady(true);
         isManualStop = false;
@@ -457,9 +474,11 @@
         for (let i = event.resultIndex; i < event.results.length; i++) {
           const transcript = event.results[i][0].transcript.toLowerCase().trim();
           const isFinal = event.results[i].isFinal;
+          const confidence = event.results[i][0].confidence;
           
           if (isFinal) {
             console.log('✅ Resultado FINAL:', transcript);
+            addDebugLog('final', `✅ FINAL: "${transcript}"`, { conf: (confidence * 100).toFixed(0) + '%' });
             // Si ya mostramos este texto como interim, no volver a procesarlo
             if (transcript !== lastInterimText) {
               const result = processSpokenInput(transcript);
@@ -470,13 +489,18 @@
               } else if (result) {
                 setSpokenText(prev => prev + result);
                 console.log('🔤 Letra(s) final confirmada:', result);
+                addDebugLog('final', `🔤 Letra añadida: "${result}"`);
+              } else {
+                addDebugLog('info', `⚠️ Sin mapeo para: "${transcript}"`);
               }
             } else {
               console.log('🔄 Final coincide con interim ya mostrado, no duplicar');
+              addDebugLog('info', `⏭ Duplicado ignorado: "${transcript}"`);
             }
             lastInterimText = ''; // Limpiar el interim tracking
           } else {
             console.log('🔄 Resultado INTERIM:', transcript);
+            addDebugLog('interim', `🔄 INTERIM: "${transcript}"`);
             // Solo procesar si es diferente al último interim
             if (transcript !== lastInterimText) {
               const result = processSpokenInput(transcript);
@@ -487,6 +511,9 @@
               } else if (result) {
                 setSpokenText(prev => prev + result);
                 console.log('🔤 Letra(s) interim mostrada:', result);
+                addDebugLog('interim', `🔤 Interim: "${result}"`);
+              } else {
+                addDebugLog('info', `⚠️ Sin mapeo interim: "${transcript}"`);
               }
               lastInterimText = transcript;
             }
@@ -497,6 +524,7 @@
       
       recognitionInstance.onerror = (event) => {
         console.error('❌ Error de reconocimiento:', event.error);
+        addDebugLog('error', `❌ ERROR: ${event.error}`);
         
         const timeouts = optimizeForMobile().timeouts;
         
@@ -571,6 +599,7 @@
       
       recognitionInstance.onend = () => {
         console.log('🔚 Reconocimiento terminado');
+        addDebugLog('end', '🔚 Mic TERMINADO - reiniciando...');
         
         // Limpiar variables de deduplicación al reiniciar
         processedContent.clear();
@@ -7229,7 +7258,178 @@
         }),
         currentScreen === 'admin' && React.createElement(AdminScreen),
         
+        // ===================== DEBUG CONSOLE (solo admin) =====================
+        isAdminLogged && React.createElement(React.Fragment, null,
+          // Botón para abrir/cerrar debug
+          React.createElement('button', {
+            onClick: () => setShowDebug(v => !v),
+            title: 'Consola de Reconocimiento de Voz',
+            style: {
+              position: 'fixed',
+              bottom: '80px',
+              left: '16px',
+              zIndex: 3000,
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              background: showDebug ? '#7c3aed' : 'rgba(30,20,60,0.85)',
+              border: '2px solid rgba(124,58,237,0.6)',
+              color: '#fff',
+              fontSize: '18px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: showDebug ? '0 0 16px rgba(124,58,237,0.8)' : '0 2px 8px rgba(0,0,0,0.4)',
+              transition: 'all 0.2s'
+            }
+          }, '🐛'),
+
+          // Panel de debug
+          showDebug && React.createElement('div', {
+            style: {
+              position: 'fixed',
+              bottom: '130px',
+              left: '12px',
+              width: 'min(420px, calc(100vw - 24px))',
+              maxHeight: '55vh',
+              background: 'rgba(10,6,26,0.97)',
+              border: '1.5px solid rgba(124,58,237,0.5)',
+              borderRadius: '14px',
+              zIndex: 2999,
+              display: 'flex',
+              flexDirection: 'column',
+              overflow: 'hidden',
+              boxShadow: '0 8px 40px rgba(0,0,0,0.7)',
+              fontFamily: 'monospace'
+            }
+          },
+            // Header del panel
+            React.createElement('div', {
+              style: {
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '8px 12px',
+                background: 'rgba(124,58,237,0.2)',
+                borderBottom: '1px solid rgba(124,58,237,0.3)',
+                flexShrink: 0
+              }
+            },
+              React.createElement('span', { style: { color: '#c4b5fd', fontWeight: 'bold', fontSize: '12px' } },
+                '🐛 Consola de Reconocimiento de Voz'
+              ),
+              React.createElement('div', { style: { display: 'flex', gap: '6px' } },
+                React.createElement('button', {
+                  onClick: () => { debugLogsRef.current = []; setDebugLogs([]); },
+                  style: {
+                    background: 'rgba(239,68,68,0.2)',
+                    border: '1px solid rgba(239,68,68,0.4)',
+                    borderRadius: '6px',
+                    color: '#fca5a5',
+                    fontSize: '10px',
+                    padding: '2px 7px',
+                    cursor: 'pointer'
+                  }
+                }, 'Limpiar'),
+                React.createElement('button', {
+                  onClick: () => setShowDebug(false),
+                  style: {
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: '6px',
+                    color: '#9ca3af',
+                    fontSize: '10px',
+                    padding: '2px 7px',
+                    cursor: 'pointer'
+                  }
+                }, '✕')
+              )
+            ),
+            
+            // Leyenda de colores
+            React.createElement('div', {
+              style: {
+                display: 'flex',
+                gap: '10px',
+                padding: '5px 12px',
+                background: 'rgba(0,0,0,0.3)',
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
+                flexShrink: 0,
+                flexWrap: 'wrap'
+              }
+            },
+              [
+                { color: '#34d399', label: '✅ Final' },
+                { color: '#60a5fa', label: '🔄 Interim' },
+                { color: '#f87171', label: '❌ Error' },
+                { color: '#fbbf24', label: '🎤 Inicio' },
+                { color: '#a78bfa', label: '🔚 Fin/Info' }
+              ].map(({ color, label }) =>
+                React.createElement('span', {
+                  key: label,
+                  style: { color, fontSize: '10px', whiteSpace: 'nowrap' }
+                }, label)
+              )
+            ),
+
+            // Área de logs con scroll
+            React.createElement('div', {
+              id: 'debug-log-area',
+              style: {
+                overflowY: 'auto',
+                padding: '6px 8px',
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '2px'
+              }
+            },
+              debugLogs.length === 0
+                ? React.createElement('div', {
+                    style: { color: '#6b7280', fontSize: '11px', padding: '12px', textAlign: 'center' }
+                  }, 'Esperando actividad del reconocimiento de voz...')
+                : debugLogs.map(log => {
+                    const colors = {
+                      final: '#34d399',
+                      interim: '#60a5fa',
+                      error: '#f87171',
+                      start: '#fbbf24',
+                      end: '#a78bfa',
+                      info: '#9ca3af'
+                    };
+                    const color = colors[log.type] || '#9ca3af';
+                    return React.createElement('div', {
+                      key: log.id,
+                      style: {
+                        display: 'flex',
+                        gap: '6px',
+                        alignItems: 'flex-start',
+                        fontSize: '11px',
+                        lineHeight: '1.5',
+                        padding: '2px 4px',
+                        borderRadius: '4px',
+                        background: log.type === 'error' ? 'rgba(239,68,68,0.08)' :
+                                    log.type === 'start' ? 'rgba(251,191,36,0.07)' : 'transparent'
+                      }
+                    },
+                      React.createElement('span', { style: { color: '#4b5563', whiteSpace: 'nowrap', flexShrink: 0 } },
+                        log.time
+                      ),
+                      React.createElement('span', { style: { color, flex: 1, wordBreak: 'break-all' } },
+                        log.message
+                      ),
+                      log.data && React.createElement('span', { style: { color: '#6b7280', flexShrink: 0 } },
+                        log.data
+                      )
+                    );
+                  })
+            )
+          )
+        ),
+
         // Botón Flotante de Ayuda (siempre en la esquina inferior derecha de las pantallas)
+
         React.createElement('div', {
           className: `help-button-container ${helpDocked ? 'help-button-docked' : ''}`,
           style: {
