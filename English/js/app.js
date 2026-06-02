@@ -459,6 +459,7 @@
       
       let isManualStop = false;
       let lastProcessedLength = 0; // Para evitar procesar el mismo texto múltiples veces
+      let lastProcessedSegmentIndex = -1; // Para rastrear el segmento actual en modo continuo
       let noiseFilter = []; // Buffer para filtrar ruido
       let contextBuffer = ''; // Buffer de contexto para mejor precisión
       let confidenceThreshold = 0.3; // Umbral de confianza mínimo
@@ -513,6 +514,7 @@
         setRecognitionReady(true);
         isManualStop = false;
         lastProcessedLength = 0;
+        lastProcessedSegmentIndex = -1;
         resetIdleTimeout();
       };
       
@@ -526,18 +528,17 @@
         // En modo continuous, cada resultado tiene su propio índice
         // Procesamos SÓLO los resultados nuevos desde event.resultIndex
         for (let i = event.resultIndex; i < event.results.length; i++) {
-          const transcript = event.results[i][0].transcript.toLowerCase().trim();
+          const transcript = event.results[i][0].transcript.toLowerCase();
           const isFinal = event.results[i].isFinal;
           const confidence = event.results[i][0].confidence;
 
           // Evitar que el micrófono capture la palabra completa pronunciada al inicio/final
           if (currentWordRef.current && currentWordRef.current.word) {
-            const cleanTranscript = transcript.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’']/g, '').replace(/[^a-z]/g, '');
+            const cleanTranscript = transcript.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’']/g, '').replace(/[^a-z]/g, '');
             const cleanTarget = currentWordRef.current.word.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[’']/g, '').replace(/[^a-z]/g, '');
             
             // Separar palabras reales eliminando puntuación del transcrito
             const wordsInTranscript = transcript
-              .toLowerCase()
               .replace(/[^a-zäöüßéèàùçâêîôûëïüÿæœ\s]/g, '')
               .trim()
               .split(/\s+/);
@@ -554,53 +555,36 @@
 
               if (isTargetPrefix) {
                 console.log('🚫 Palabra completa o fragmento hablado ignorado:', transcript);
-                addDebugLog('info', `🚫 Palabra completa ignorada: "${transcript}"`);
+                addDebugLog('info', `🚫 Palabra completa ignorada: "${transcript.trim()}"`);
                 continue;
               }
             }
           }
           
-          if (isFinal) {
-            console.log('✅ Resultado FINAL:', transcript);
-            addDebugLog('final', `✅ FINAL: "${transcript}"`, { conf: (confidence * 100).toFixed(0) + '%' });
-            // Si ya mostramos este texto como interim, no volver a procesarlo
-            if (transcript !== lastInterimText) {
-              const result = processSpokenInput(transcript);
-              if (result === 'DELETE') {
-                setSpokenText(prev => prev.slice(0, -1));
-              } else if (result === 'CLEAR') {
-                setSpokenText('');
-              } else if (result) {
-                setSpokenText(prev => prev + result);
-                console.log('🔤 Letra(s) final confirmada:', result);
-                addDebugLog('final', `🔤 Letra añadida: "${result}"`);
-              } else {
-                addDebugLog('info', `⚠️ Sin mapeo para: "${transcript}"`);
-              }
-            } else {
-              console.log('🔄 Final coincide con interim ya mostrado, no duplicar');
-              addDebugLog('info', `⏭ Duplicado ignorado: "${transcript}"`);
+          if (lastProcessedSegmentIndex !== i) {
+            lastProcessedSegmentIndex = i;
+            lastProcessedLength = 0;
+          }
+          
+          const currentText = transcript;
+          if (currentText.length > lastProcessedLength) {
+            const newPortion = currentText.substring(lastProcessedLength);
+            console.log(`[Seg ${i}] Procesando porción nueva: "${newPortion}" (de "${currentText}")`);
+            
+            const result = processSpokenInput(newPortion);
+            if (result === 'DELETE') {
+              setSpokenText(prev => prev.slice(0, -1));
+              addDebugLog(isFinal ? 'final' : 'interim', '🔤 Letra eliminada (DELETE)');
+            } else if (result === 'CLEAR') {
+              setSpokenText('');
+              addDebugLog(isFinal ? 'final' : 'interim', '🔤 Deletreo limpiado (CLEAR)');
+            } else if (result) {
+              setSpokenText(prev => prev + result);
+              console.log('🔤 Letra(s) añadida:', result);
+              addDebugLog(isFinal ? 'final' : 'interim', `🔤 Letra añadida: "${result}"`);
             }
-            lastInterimText = ''; // Limpiar el interim tracking
-          } else {
-            console.log('🔄 Resultado INTERIM:', transcript);
-            addDebugLog('interim', `🔄 INTERIM: "${transcript}"`);
-            // Solo procesar si es diferente al último interim
-            if (transcript !== lastInterimText) {
-              const result = processSpokenInput(transcript);
-              if (result === 'DELETE') {
-                setSpokenText(prev => prev.slice(0, -1));
-              } else if (result === 'CLEAR') {
-                setSpokenText('');
-              } else if (result) {
-                setSpokenText(prev => prev + result);
-                console.log('🔤 Letra(s) interim mostrada:', result);
-                addDebugLog('interim', `🔤 Interim: "${result}"`);
-              } else {
-                addDebugLog('info', `⚠️ Sin mapeo interim: "${transcript}"`);
-              }
-              lastInterimText = transcript;
-            }
+            
+            lastProcessedLength = currentText.length;
           }
         }
       };
