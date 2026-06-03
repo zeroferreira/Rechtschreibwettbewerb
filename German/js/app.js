@@ -1021,7 +1021,7 @@
         // Configurar gramática si está disponible
         try {
           const grammarList = new (window.SpeechGrammarList || window.webkitSpeechGrammarList)();
-          const alphabet = 'a b c d e f g h i j k l m n o p q r s t u v w x y z ä ö ü ß anton berta cäsar dora emil friedrich gustav heinrich ida julius kaufmann ludwig martha nordpol otto paula quelle richard samuel theodor ulrich viktor wilhelm xanthippe ypsilon zacharias löschen entfernen leer neu anfang vonvorn zurück delete clear';
+          const alphabet = 'a b c d e f g h i j k l m n o p q r s t u v w x y z ä ö ü ß anton berta cäsar dora emil friedrich gustav heinrich ida julius kaufmann ludwig martha nordpol otto paula quelle richard samuel theodor ulrich viktor wilhelm xanthippe ypsilon zacharias löschen entfernen leer neu anfang vonvorn zurück delete clear gross groß capital umlaut eszett scharfes';
           const grammar = '#JSGF V1.0; grammar letters; public <letter> = ' + alphabet + ';';
           grammarList.addFromString(grammar, 1);
           recognitionInstance.grammars = grammarList;
@@ -3205,6 +3205,15 @@
                   React.createElement('li', null, "Geben Sie die richtige Schreibweise in das Textfeld ein (oder nutzen Sie das Mikrofon zum Delettieren)."),
                   React.createElement('li', null, "Nutzen Sie die Hilfen (Definitionen, Beispiele) im Trainingsmodus."),
                   React.createElement('li', null, 'Drücken Sie auf Bestätigen, um Ihre Antwort abzusenden.')
+                ),
+                React.createElement('div', { className: 'mt-6 p-4 bg-black/50 rounded-xl border border-yellow-400/20 text-xs sm:text-sm text-gray-300' },
+                  React.createElement('h4', { className: 'font-bold text-yellow-400 mb-2 flex items-center gap-1.5' }, '🎤 Sprachbefehle für das Buchstabieren:'),
+                  React.createElement('ul', { className: 'space-y-1.5' },
+                    React.createElement('li', null, '• ', React.createElement('strong', null, 'Großbuchstaben:'), ' Sagen Sie "groß", "gross" oder "capital" vor dem Buchstaben (z. B. "gross A" für A).'),
+                    React.createElement('li', null, '• ', React.createElement('strong', null, 'Umlaute & Eszett:'), ' Sagen Sie "Umlaut A/O/U" (oder "A/O/U Umlaut") für ä/ö/ü, und "Eszett" oder "Scharfes S" für ß.'),
+                    React.createElement('li', null, '• ', React.createElement('strong', null, 'Löschen:'), ' Sagen Sie "löschen", "zurück" oder "entfernen" zum Löschen des letzten Zeichens.'),
+                    React.createElement('li', null, '• ', React.createElement('strong', null, 'Zurücksetzen:'), ' Sagen Sie "leer" oder "neu", um die gesamte Eingabe zu leeren.')
+                  )
                 )
               ),
 

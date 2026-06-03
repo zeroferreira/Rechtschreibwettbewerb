@@ -496,7 +496,7 @@
         // Configurar gramática si está disponible
         try {
           const grammarList = new (window.SpeechGrammarList || window.webkitSpeechGrammarList)();
-          const alphabet = 'a b c d e f g h i j k l m n o p q r s t u v w x y z alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november oscar papa quebec romeo sierra tango uniform victor whiskey xray yankee zulu delete clear backspace reset';
+          const alphabet = 'a b c d e f g h i j k l m n o p q r s t u v w x y z alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima mike november oscar papa quebec romeo sierra tango uniform victor whiskey xray yankee zulu delete clear backspace reset hyphen dash';
           const grammar = '#JSGF V1.0; grammar letters; public <letter> = ' + alphabet + ';';
           grammarList.addFromString(grammar, 1);
           recognitionInstance.grammars = grammarList;
@@ -1554,10 +1554,17 @@
           
           // Comandos especiales
           'delete': 'DELETE', 'backspace': 'DELETE', 'clear': 'CLEAR', 'reset': 'CLEAR',
-          'capital': 'CAPITAL', 'upper': 'CAPITAL'
+          'capital': 'CAPITAL', 'upper': 'CAPITAL',
+          
+          // Guion / Hyphen
+          'hyphen': '-', 'dash': '-', '-': '-'
         };
         
-        const words = transcript.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/);
+        const cleanTranscript = (transcript || '')
+          .toLowerCase()
+          .replace(/-/g, ' - ')
+          .replace(/[^a-z\s-]/g, '');
+        const words = cleanTranscript.split(/\s+/).filter(Boolean);
         let letters = '';
         let nextUpper = false;
         
@@ -7037,6 +7044,15 @@
                   React.createElement('li', { className: 'flex items-start p-3 bg-black/40 rounded-xl border border-white/10' },
                     React.createElement('span', { className: 'w-6 h-6 bg-yellow-400 text-black rounded-full flex items-center justify-center mr-3 font-bold text-xs mt-0.5' }, '6'),
                     'Continue with new words'
+                  )
+                ),
+                React.createElement('div', { className: 'mt-6 p-4 bg-black/50 rounded-xl border border-yellow-400/20 text-xs sm:text-sm text-gray-300' },
+                  React.createElement('h4', { className: 'font-bold text-yellow-400 mb-2 flex items-center gap-1.5' }, '🎤 Voice Spelling Guide:'),
+                  React.createElement('ul', { className: 'space-y-1.5' },
+                    React.createElement('li', null, '• ', React.createElement('strong', null, 'Hyphens (-):'), ' Say "hyphen" or "dash" (needed for Level B & C compound words).'),
+                    React.createElement('li', null, '• ', React.createElement('strong', null, 'Capitals:'), ' Say "capital" or "upper" before a letter (e.g. "capital A" for A).'),
+                    React.createElement('li', null, '• ', React.createElement('strong', null, 'Erase:'), ' Say "delete" or "backspace" to remove the last character.'),
+                    React.createElement('li', null, '• ', React.createElement('strong', null, 'Restart:'), ' Say "clear" or "reset" to clear the entire spelling.')
                   )
                 )
               ),
