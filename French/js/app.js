@@ -932,7 +932,7 @@
         }
       };
     };
-    // Función de acumulador de deletreo inteligente letra por letra (Solución 1 - Sin bloqueo y con capitalización por voz)
+    // Función de acumulador de deletreo inteligente letra por letra (Estilo Máquina de Escribir No Destructivo)
     const getProgressiveSpellingText = (prevText, result, targetWord) => {
       if (result === 'DELETE') {
         return prevText.slice(0, -1);
@@ -940,56 +940,32 @@
       if (result === 'CLEAR') {
         return '';
       }
-      if (!result || !targetWord) {
+      if (!result) {
         return prevText;
       }
 
-      const base = prevText;
-      const target = targetWord.toLowerCase();
+      const resultClean = result.trim();
+      const prevLower = prevText.toLowerCase();
+      const resultLower = resultClean.toLowerCase();
       
-      const spokenLetters = result.toLowerCase();
-      const nextExpectedIndex = base.length;
-      
-      // Si el alumno sigue deletreando más allá del límite de la palabra
-      if (nextExpectedIndex >= target.length) {
-        // Cualquier letra extra es incorrecta y se agrega directamente en el mismo formato hablado
-        return base + result;
+      // Si el resultado ya es un sufijo de lo que tenemos, no añadimos nada
+      if (prevLower.endsWith(resultLower)) {
+        return prevText;
       }
       
-      const nextExpectedLetter = target[nextExpectedIndex];
-      
-      if (nextExpectedLetter) {
-        // Tomamos el primer carácter hablado
-        const spokenChar = spokenLetters[0];
-        
-        // Si coincide con la letra esperada, usamos el carácter exacto pronunciado (respetando si dijo "capital")
-        if (spokenChar === nextExpectedLetter) {
-          let newText = base + result[0];
-          
-          // Si el resultado de voz tiene más caracteres correctos consecutivos, los añadimos
-          let tempMatch = newText.toLowerCase();
-          let idx = 1;
-          while (idx < spokenLetters.length && tempMatch.length < target.length) {
-            const expected = target[tempMatch.length];
-            if (spokenLetters[idx] === expected) {
-              newText += result[idx] || expected;
-              tempMatch += expected;
-            } else {
-              // Si topamos con un carácter incorrecto, añadimos el resto del resultado desde este índice
-              newText += result.slice(idx);
-              break;
-            }
-            idx++;
-          }
-          return newText;
-        } 
-        // Si es incorrecto, simplemente agregamos la letra incorrecta (con la forma en que se capturó)
-        else {
-          return base + result;
+      // Buscar el mayor solapamiento entre el final de prevText y el inicio de result
+      let overlapLen = 0;
+      for (let i = Math.min(prevText.length, resultClean.length); i > 0; i--) {
+        const suffix = prevLower.slice(-i);
+        const prefix = resultLower.slice(0, i);
+        if (suffix === prefix) {
+          overlapLen = i;
+          break;
         }
       }
       
-      return base;
+      // Retornamos el texto previo más la parte nueva del resultado
+      return prevText + resultClean.substring(overlapLen);
     };
 
     // Función de reconocimiento con procesamiento inmediato
@@ -1174,10 +1150,22 @@
           const result = processSpokenInput(finalTranscript.toLowerCase().trim());
           
           setSpokenText(prev => {
-            // Limpieza del estado previo si termina con el último interim
+            // Limpieza del estado previo si termina con el último interim, sin borrar prefijo correcto
             let base = prev;
             if (lastInterimText && prev.endsWith(lastInterimText)) {
-              base = prev.substring(0, prev.length - lastInterimText.length);
+              const target = (currentWordRef.current?.word || '').toLowerCase();
+              const prevLower = prev.toLowerCase();
+              let correctLen = 0;
+              while (
+                correctLen < prev.length &&
+                correctLen < target.length &&
+                prevLower[correctLen] === target[correctLen]
+              ) {
+                correctLen++;
+              }
+              const newLength = prev.length - lastInterimText.length;
+              const clampedLength = Math.max(newLength, correctLen);
+              base = prev.substring(0, clampedLength);
             }
 
             const targetWord = currentWordRef.current?.word || '';
@@ -1198,30 +1186,28 @@
             setSpokenText(prev => {
               let base = prev;
               if (lastInterimText && prev.endsWith(lastInterimText)) {
-                base = prev.substring(0, prev.length - lastInterimText.length);
-              }
-              
-              // DEDUPLICACIÓN PARA INTERIM (prefix-suffix overlap detection)
-              let textToAdd = result;
-              
-              if (base.endsWith(result)) {
-                textToAdd = '';
-              } else {
-                for (let i = Math.min(base.length, result.length); i > 0; i--) {
-                  const suffix = base.slice(-i);
-                  const prefix = result.slice(0, i);
-                  if (suffix === prefix) {
-                    textToAdd = result.slice(i);
-                    break;
-                  }
+                const target = (currentWordRef.current?.word || '').toLowerCase();
+                const prevLower = prev.toLowerCase();
+                let correctLen = 0;
+                while (
+                  correctLen < prev.length &&
+                  correctLen < target.length &&
+                  prevLower[correctLen] === target[correctLen]
+                ) {
+                  correctLen++;
                 }
+                const newLength = prev.length - lastInterimText.length;
+                const clampedLength = Math.max(newLength, correctLen);
+                base = prev.substring(0, clampedLength);
               }
+              
+              const targetWord = currentWordRef.current?.word || '';
+              const newText = getProgressiveSpellingText(base, result, targetWord);
 
               lastInterimText = result; // Guardamos el nuevo provisional
-              const newText = base + textToAdd;
               
               // Verificación en tiempo real si coincide con la palabra completa
-              if (newText.toLowerCase().trim() === currentWordRef.current?.word.toLowerCase()) {
+              if (newText.toLowerCase().trim() === targetWord.toLowerCase()) {
                 setIsCorrect(true);
                 setShowSuccessModal(true);
                 if (recognition && recognition.manualStop) {
