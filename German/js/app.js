@@ -1911,33 +1911,68 @@
 
     const enhancedLetterMap = enhancedGermanLetterMap;
 
-    // Función para detectar si el input contiene palabras completas en alemán
-    const containsCompleteWords = (transcript) => {
-      const cleaned = (transcript || '')
+    // Función de normalización de transcripción para robustez en deletreo (Alemán)
+    const normalizeSpokenTranscript = (transcript) => {
+      return (transcript || '')
         .toLowerCase()
         .replace(/[’']/g, ' ')
+        // Limpiar caracteres extraños pero mantener los alemanes y el guion
         .replace(/[^a-zäöüß\s-]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-
-      if (!cleaned) return false;
-
-      const tokens = cleaned
-        .replace(/\bumlaut\s+a\b/g, 'umlauta')
-        .replace(/\ba\s+umlaut\b/g, 'aumlaut')
-        .replace(/\bumlaut\s+o\b/g, 'umlauto')
-        .replace(/\bo\s+umlaut\b/g, 'oumlaut')
-        .replace(/\bumlaut\s+u\b/g, 'umlautu')
-        .replace(/\bu\s+umlaut\b/g, 'uumlaut')
-        .replace(/\bscharfes\s+s\b/g, 'scharfess')
+        // Reemplazar homófonos comunes de Umlaut A
+        .replace(/\bumlaut\s+a\b/g, 'ä')
+        .replace(/\ba\s+umlaut\b/g, 'ä')
+        .replace(/\bum\s+laut\s+a\b/g, 'ä')
+        .replace(/\bum\s+lauta\b/g, 'ä')
+        .replace(/\bumlaute\s+a\b/g, 'ä')
+        .replace(/\bumlaute\b/g, 'ä')
+        .replace(/\bam\s+laut\b/g, 'ä')
+        .replace(/\ban\s+laut\b/g, 'ä')
+        .replace(/\bab\s+laut\b/g, 'ä')
+        .replace(/\ba\s+umland\b/g, 'ä')
+        .replace(/\bumland\s+a\b/g, 'ä')
+        
+        // Reemplazar homófonos comunes de Umlaut O
+        .replace(/\bumlaut\s+o\b/g, 'ö')
+        .replace(/\bo\s+umlaut\b/g, 'ö')
+        .replace(/\bum\s+laut\s+o\b/g, 'ö')
+        .replace(/\bum\s+lauto\b/g, 'ö')
+        .replace(/\bumlaute\s+o\b/g, 'ö')
+        .replace(/\bo\s+umland\b/g, 'ö')
+        .replace(/\bumland\s+o\b/g, 'ö')
+        
+        // Reemplazar homófonos comunes de Umlaut U
+        .replace(/\bumlaut\s+u\b/g, 'ü')
+        .replace(/\bu\s+umlaut\b/g, 'ü')
+        .replace(/\bum\s+laut\s+u\b/g, 'ü')
+        .replace(/\bum\s+lautu\b/g, 'ü')
+        .replace(/\bumlaute\s+u\b/g, 'ü')
+        .replace(/\bu\s+umland\b/g, 'ü')
+        .replace(/\bumland\s+u\b/g, 'ü')
+        
+        // Reemplazar homófonos comunes de Eszett
+        .replace(/\bscharfes\s+s\b/g, 'ß')
+        .replace(/\bscharfess\b/g, 'ß')
+        .replace(/\beszsett\b/g, 'ß')
+        .replace(/\bes\s+zett\b/g, 'ß')
+        .replace(/\bess\s+zett\b/g, 'ß')
+        
+        // Otros comandos y limpieza de espacios redundantes
         .replace(/\bdouble\s+you\b/g, 'doubleyou')
         .replace(/\bvon\s+vorn\b/g, 'vonvorn')
-        .split(/\s+/)
-        .filter(Boolean);
+        .replace(/\s+/g, ' ')
+        .trim();
+    };
+
+    // Función para detectar si el input contiene palabras completas en alemán
+    const containsCompleteWords = (transcript) => {
+      const normalized = normalizeSpokenTranscript(transcript);
+      if (!normalized) return false;
+
+      const tokens = normalized.split(/\s+/).filter(Boolean);
 
       // Si es una coincidencia exacta de una sola palabra esperada
       if (currentWordRef.current && currentWordRef.current.word) {
-        const merged = normalizeForCompare(cleaned);
+        const merged = normalizeForCompare(normalized);
         const target = normalizeForCompare(currentWordRef.current.word);
         const letterishCount = tokens.filter(t => enhancedGermanLetterMap[t] || (t.length === 1 && /[a-zäöüß]/.test(t))).length;
         if (letterishCount < 2 && merged === target) return true;
@@ -1959,28 +1994,10 @@
 
     // Función para detectar si el input parece deletreo en alemán
     const isLikelySpelling = (transcript) => {
-      const cleaned = (transcript || '')
-        .toLowerCase()
-        .replace(/[’']/g, ' ')
-        .replace(/[^a-zäöüß\s-]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
+      const normalized = normalizeSpokenTranscript(transcript);
+      if (!normalized) return false;
 
-      if (!cleaned) return false;
-
-      const tokens = cleaned
-        .replace(/\bumlaut\s+a\b/g, 'umlauta')
-        .replace(/\ba\s+umlaut\b/g, 'aumlaut')
-        .replace(/\bumlaut\s+o\b/g, 'umlauto')
-        .replace(/\bo\s+umlaut\b/g, 'oumlaut')
-        .replace(/\bumlaut\s+u\b/g, 'umlautu')
-        .replace(/\bu\s+umlaut\b/g, 'uumlaut')
-        .replace(/\bscharfes\s+s\b/g, 'scharfess')
-        .replace(/\bdouble\s+you\b/g, 'doubleyou')
-        .replace(/\bvon\s+vorn\b/g, 'vonvorn')
-        .split(/\s+/)
-        .filter(Boolean);
-
+      const tokens = normalized.split(/\s+/).filter(Boolean);
       if (!tokens.length) return false;
 
       let recognized = 0;
@@ -2002,23 +2019,8 @@
     const processSpokenInput = (transcript) => {
       console.log('🔤 Procesando input:', transcript);
 
-      const words = (transcript || '')
-        .toLowerCase()
-        .replace(/[’']/g, ' ')
-        .replace(/[^a-zäöüß\s-]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .replace(/\bumlaut\s+a\b/g, 'umlauta')
-        .replace(/\ba\s+umlaut\b/g, 'aumlaut')
-        .replace(/\bumlaut\s+o\b/g, 'umlauto')
-        .replace(/\bo\s+umlaut\b/g, 'oumlaut')
-        .replace(/\bumlaut\s+u\b/g, 'umlautu')
-        .replace(/\bu\s+umlaut\b/g, 'uumlaut')
-        .replace(/\bscharfes\s+s\b/g, 'scharfess')
-        .replace(/\bdouble\s+you\b/g, 'doubleyou')
-        .replace(/\bvon\s+vorn\b/g, 'vonvorn')
-        .split(/\s+/)
-        .filter(Boolean);
+      const normalized = normalizeSpokenTranscript(transcript);
+      const words = normalized.split(/\s+/).filter(Boolean);
 
       let letters = '';
       let nextUpper = false;
