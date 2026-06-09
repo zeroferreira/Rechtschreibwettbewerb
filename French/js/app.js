@@ -919,11 +919,14 @@
         if (hasError) {
           console.log('❌ Error detectado (letra incorrecta).');
           setIsCorrect(false);
+          // ✅ NO detenemos el micrófono en error para permitir que el alumno continúe o corrija
+          /*
           if (recognition) {
              try {
                recognition.manualStop();
              } catch(e) { console.log('Error al detener recognition:', e); }
           }
+          */
           // Limpiar el estado de error después de 2 segundos para permitir reintentar
           setTimeout(() => setIsCorrect(null), 2000);
         } else if (cleanSpoken === target) {
