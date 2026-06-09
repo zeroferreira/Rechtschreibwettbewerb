@@ -1270,7 +1270,6 @@
               // Verificación en tiempo real si coincide con la palabra completa
               if (newText.toLowerCase().trim() === targetWord.toLowerCase()) {
                 setIsCorrect(true);
-                setShowSuccessModal(true);
                 if (recognition && recognition.manualStop) {
                   recognition.manualStop();
                 }
@@ -2254,6 +2253,14 @@
         setIsSpinning(true);
         setAnimationStep(0);
         setSpokenText(''); // Limpiar el texto deletreado
+        setIsCorrect(null); // Limpiar el estado de corrección
+        
+        // Detener reconocimiento de voz si está activo para evitar capturar ruido en la transición
+        if (isListening && recognition) {
+          try {
+            recognition.manualStop();
+          } catch(e) { console.log('Error al detener en selectRandomWord:', e); }
+        }
         
         const numbers = Array.from({length: 10}, (_, i) => i + 1);
         let currentIndex = 0;
