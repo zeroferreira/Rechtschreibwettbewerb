@@ -1,0 +1,16 @@
+{
+  "short_name": "Spelling Bee EN",
+  "name": "Spelling Bee English",
+  "icons": [
+    {
+      "src": "img/Abeja.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    }
+  ],
+  "start_url": "./index.html",
+  "background_color": "#120e24",
+  "theme_color": "#120e24",
+  "display": "standalone",
+  "orientation": "portrait"
+}
