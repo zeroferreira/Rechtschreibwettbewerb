@@ -146,23 +146,24 @@
         0 10px 25px rgba(0, 0, 0, 0.5),
         0 0 20px rgba(245, 158, 11, 0.15);
       position: relative;
-      overflow: visible;
+      overflow: hidden;
       border-radius: 9999px;
     }
 
-    /* Liquid Honey Fill Effect - Ultra Ultra Smooth Transition */
+    /* Liquid Honey Fill Effect - Smooth Progress Animation */
     .honey-fill {
       background: var(--honey-liquid);
       position: relative;
-      transition: width 0.8s ease-out;
+      transition: width 0.7s cubic-bezier(0.16, 1, 0.3, 1);
       box-shadow: 
         0 0 20px rgba(245, 158, 11, 0.85),
         inset 0 2px 3px rgba(255, 255, 255, 0.7),
         inset 0 -2px 4px rgba(180, 83, 9, 0.6);
       border-radius: 9999px;
+      min-width: 14px;
     }
 
-    /* Surface Wave Wave Animation on Honey Liquid */
+    /* Surface Wave Animation on Honey Liquid */
     .honey-fill::after {
       content: '';
       position: absolute;
@@ -179,43 +180,52 @@
       100% { transform: translateX(100%); }
     }
 
-    /* Multi Honey Dripping Animation into the jar */
-    .honey-drip-container {
-      position: absolute;
-      top: -26px;
-      left: 0;
-      right: 0;
-      height: 30px;
-      pointer-events: none;
+    /* Lateral Dripping Honey Nozzle on Left */
+    .honey-nozzle {
+      position: relative;
+      display: flex;
+      align-items: center;
     }
 
-    .falling-drop {
-      position: absolute;
-      width: 8px;
+    .nozzle-pipe {
+      width: 12px;
       height: 12px;
+      background: linear-gradient(135deg, rgba(251, 191, 36, 0.3), rgba(245, 158, 11, 0.1));
+      border: 1px solid rgba(251, 191, 36, 0.4);
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(251, 191, 36, 0.3);
+    }
+
+    /* Honey Drop falling from left side into the bar tube */
+    .falling-side-drop {
+      position: absolute;
+      left: 6px;
+      top: 0px;
+      width: 8px;
+      height: 10px;
       background: radial-gradient(circle at 30% 30%, #fef08a, #f59e0b 70%, #d97706 100%);
       border-radius: 50% 50% 50% 50% / 70% 70% 35% 35%;
-      box-shadow: 0 0 10px rgba(245, 158, 11, 0.9);
-      animation: dripFall var(--drip-speed, 1.8s) cubic-bezier(0.4, 0, 0.8, 1) infinite;
-      animation-delay: var(--drip-delay, 0s);
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.9);
+      animation: dripSideFall 1.4s cubic-bezier(0.4, 0, 0.8, 1) infinite;
+      z-index: 10;
       opacity: 0;
     }
 
-    @keyframes dripFall {
+    @keyframes dripSideFall {
       0% {
-        transform: translateY(0px) scale(0.3);
+        transform: translate(0, 0) scale(0.4);
         opacity: 0;
       }
       20% {
         opacity: 1;
-        transform: translateY(6px) scale(1);
+        transform: translate(3px, 4px) scale(1);
       }
       80% {
         opacity: 1;
-        transform: translateY(22px) scale(1.1);
+        transform: translate(12px, 8px) scale(1.1);
       }
       100% {
-        transform: translateY(28px) scale(0.2);
+        transform: translate(18px, 10px) scale(0.2);
         opacity: 0;
       }
     }
@@ -383,14 +393,21 @@
             <span id="honey-percentage" class="text-amber-300 font-mono text-sm">5%</span>
           </div>
 
-          <!-- Glassmorphism Honey Bar Tube -->
-          <div class="honey-jar-glass w-full h-6 p-0.5 relative flex items-center">
+          <!-- Glassmorphism Honey Bar Tube with Lateral Honey Dispenser -->
+          <div class="w-full flex items-center gap-2">
             
-            <!-- Falling Honey Drops Emitters -->
-            <div id="drip-container" class="honey-drip-container"></div>
+            <!-- Left Honey Dispenser Nozzle -->
+            <div class="honey-nozzle">
+              <div class="nozzle-pipe"></div>
+              <div class="falling-side-drop"></div>
+            </div>
 
-            <!-- Filling Honey Liquid -->
-            <div id="loading-bar" class="honey-fill h-full flex items-center justify-end pr-1" style="width: 5%;"></div>
+            <!-- Main Glass Tube -->
+            <div class="honey-jar-glass flex-grow h-6 p-0.5 relative flex items-center">
+              <!-- Filling Honey Liquid -->
+              <div id="loading-bar" class="honey-fill h-full" style="width: 5%;"></div>
+            </div>
+
           </div>
 
         </div>
@@ -502,15 +519,13 @@
       }, 200);
     }
 
-    // Dynamic Slow Honey Fill & Falling Drops Update
+    // Dynamic Slow Honey Fill Update (+1% every 750ms)
     const loadingBar = document.getElementById('loading-bar');
     const stepLabel = document.getElementById('step-label');
     const honeyPercentage = document.getElementById('honey-percentage');
-    const dripContainer = document.getElementById('drip-container');
 
     let currentWidth = 5;
 
-    // Slow and steady progress (+1% every 800ms)
     setInterval(() => {
       currentWidth += 1;
       if (currentWidth > 98) {
@@ -525,27 +540,7 @@
         stepIndex = (stepIndex + 1) % i18n[currentLang].steps.length;
         stepLabel.textContent = i18n[currentLang].steps[stepIndex];
       }
-    }, 800);
-
-    // Generate Dynamic Falling Honey Drops that land on the exact fill front
-    function spawnHoneyDrop() {
-      const drop = document.createElement('div');
-      drop.className = 'falling-drop';
-      
-      // Position drop right over the active liquid border
-      const offset = Math.max(3, currentWidth - 1);
-      drop.style.left = `${offset}%`;
-      drop.style.setProperty('--drip-speed', `${1.2 + Math.random() * 0.8}s`);
-      
-      dripContainer.appendChild(drop);
-
-      setTimeout(() => {
-        drop.remove();
-      }, 2000);
-    }
-
-    // Continuous drop spawning
-    setInterval(spawnHoneyDrop, 600);
+    }, 750);
 
     // Generate Stars & Fireflies
     const starBg = document.getElementById('star-bg');
