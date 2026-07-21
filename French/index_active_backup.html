@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Permisos para dispositivos móviles -->
+  <meta name="permissions" content="microphone">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>Concours d'Orthographe 🐝</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://code.responsivevoice.org/responsivevoice.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/microsoft-cognitiveservices-speech-sdk@latest/distrib/browser/microsoft.cognitiveservices.speech.sdk.bundle-min.js"></script>
+  <script src="./spelling-data.js"></script>
+  <link rel="stylesheet" href="css/style.css?v=3.0">
+  <link rel="manifest" href="manifest.json">
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('Service Worker registered', reg))
+          .catch(err => console.error('Service Worker registration failed', err));
+      });
+    }
+  </script>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="js/app.js?v=3.9" defer></script>
+  <script id="layout-config-data" type="application/json">
+    {
+      "hero": {
+        "x": -362,
+        "y": -236,
+        "scale": 1.48
+      },
+      "cards": {
+        "x": 257,
+        "y": -169,
+        "scale": 1.42
+      },
+      "bee": {
+        "x": 507,
+        "y": 380,
+        "scale": 0.55
+      },
+      "designedWidth": 1920
+    }
+  </script>
+</body>
+</html>
