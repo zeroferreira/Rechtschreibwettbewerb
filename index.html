@@ -131,6 +131,7 @@
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.08);
       box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+      position: relative;
     }
 
     /* Honey Jar Glassmorphism Container */
@@ -145,17 +146,17 @@
         0 10px 25px rgba(0, 0, 0, 0.5),
         0 0 20px rgba(245, 158, 11, 0.15);
       position: relative;
-      overflow: hidden;
+      overflow: visible;
       border-radius: 9999px;
     }
 
-    /* Liquid Honey Fill Effect */
+    /* Liquid Honey Fill Effect - Ultra Ultra Smooth Transition */
     .honey-fill {
       background: var(--honey-liquid);
       position: relative;
-      transition: width 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+      transition: width 0.8s ease-out;
       box-shadow: 
-        0 0 20px rgba(245, 158, 11, 0.8),
+        0 0 20px rgba(245, 158, 11, 0.85),
         inset 0 2px 3px rgba(255, 255, 255, 0.7),
         inset 0 -2px 4px rgba(180, 83, 9, 0.6);
       border-radius: 9999px;
@@ -170,7 +171,7 @@
       right: 0;
       height: 100%;
       background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.45) 50%, rgba(255,255,255,0) 100%);
-      animation: honeyShine 2.5s ease-in-out infinite;
+      animation: honeyShine 3s ease-in-out infinite;
     }
 
     @keyframes honeyShine {
@@ -178,24 +179,45 @@
       100% { transform: translateX(100%); }
     }
 
-    /* Dripping Honey Drops Animation */
-    .honey-drop {
+    /* Multi Honey Dripping Animation into the jar */
+    .honey-drip-container {
       position: absolute;
-      width: 7px;
-      height: 7px;
-      background: #f59e0b;
-      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-      box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
-      animation: dropHoney 2.8s cubic-bezier(0.55, 0.085, 0.68, 0.53) infinite;
+      top: -26px;
+      left: 0;
+      right: 0;
+      height: 30px;
+      pointer-events: none;
+    }
+
+    .falling-drop {
+      position: absolute;
+      width: 8px;
+      height: 12px;
+      background: radial-gradient(circle at 30% 30%, #fef08a, #f59e0b 70%, #d97706 100%);
+      border-radius: 50% 50% 50% 50% / 70% 70% 35% 35%;
+      box-shadow: 0 0 10px rgba(245, 158, 11, 0.9);
+      animation: dripFall var(--drip-speed, 1.8s) cubic-bezier(0.4, 0, 0.8, 1) infinite;
+      animation-delay: var(--drip-delay, 0s);
       opacity: 0;
     }
 
-    @keyframes dropHoney {
-      0% { transform: translateY(-4px) scale(0.6); opacity: 0; }
-      20% { opacity: 1; transform: translateY(0px) scale(1); }
-      70% { opacity: 1; transform: translateY(12px) scale(1.1); }
-      90% { transform: translateY(22px) scale(0.3); opacity: 0; }
-      100% { opacity: 0; }
+    @keyframes dripFall {
+      0% {
+        transform: translateY(0px) scale(0.3);
+        opacity: 0;
+      }
+      20% {
+        opacity: 1;
+        transform: translateY(6px) scale(1);
+      }
+      80% {
+        opacity: 1;
+        transform: translateY(22px) scale(1.1);
+      }
+      100% {
+        transform: translateY(28px) scale(0.2);
+        opacity: 0;
+      }
     }
 
     /* Ceramic Floating Bee Badge */
@@ -353,21 +375,22 @@
         <div class="inner-glass w-full max-w-md rounded-2xl p-6 backdrop-blur-md mb-6 flex flex-col items-center">
           
           <!-- Step Text Label & Percentage Counter -->
-          <div class="w-full flex justify-between items-center text-xs font-bold text-yellow-300 tracking-wider mb-3">
+          <div class="w-full flex justify-between items-center text-xs font-bold text-yellow-300 tracking-wider mb-4">
             <span class="flex items-center gap-2">
               <i data-lucide="droplet" class="w-4 h-4 text-amber-400 fill-amber-400 animate-bounce"></i>
               <span id="step-label" class="loading-dots">Llenando depósito de miel</span>
             </span>
-            <span id="honey-percentage" class="text-amber-300 font-mono text-sm">18%</span>
+            <span id="honey-percentage" class="text-amber-300 font-mono text-sm">5%</span>
           </div>
 
           <!-- Glassmorphism Honey Bar Tube -->
-          <div class="honey-jar-glass w-full h-5 p-0.5 relative flex items-center">
+          <div class="honey-jar-glass w-full h-6 p-0.5 relative flex items-center">
+            
+            <!-- Falling Honey Drops Emitters -->
+            <div id="drip-container" class="honey-drip-container"></div>
+
             <!-- Filling Honey Liquid -->
-            <div id="loading-bar" class="honey-fill h-full flex items-center justify-end pr-1" style="width: 18%;">
-              <!-- Honey Drop at liquid edge -->
-              <div class="honey-drop"></div>
-            </div>
+            <div id="loading-bar" class="honey-fill h-full flex items-center justify-end pr-1" style="width: 5%;"></div>
           </div>
 
         </div>
@@ -387,7 +410,7 @@
     &copy; 2026 SPELLING BEE PLATFORM. ALL RIGHTS RESERVED.
   </footer>
 
-  <!-- Script for Dynamic Languages and Smooth Honey Filling -->
+  <!-- Script for Dynamic Languages and Slow Honey Filling -->
   <script>
     // Initialize Lucide Icons
     lucide.createIcons();
@@ -479,28 +502,50 @@
       }, 200);
     }
 
-    // Continuous & Progressive Honey Filling Effect (12% -> 99%)
+    // Dynamic Slow Honey Fill & Falling Drops Update
     const loadingBar = document.getElementById('loading-bar');
     const stepLabel = document.getElementById('step-label');
     const honeyPercentage = document.getElementById('honey-percentage');
+    const dripContainer = document.getElementById('drip-container');
 
-    let currentWidth = 12;
+    let currentWidth = 5;
+
+    // Slow and steady progress (+1% every 800ms)
     setInterval(() => {
-      // Gradually fill up to 99%, then loop smoothly back
-      currentWidth += Math.floor(Math.random() * 8) + 4;
-      if (currentWidth >= 99) {
-        currentWidth = 12;
+      currentWidth += 1;
+      if (currentWidth > 98) {
+        currentWidth = 5;
       }
 
       loadingBar.style.width = `${currentWidth}%`;
       honeyPercentage.textContent = `${currentWidth}%`;
 
-      // Cycle text step label periodically
-      if (currentWidth % 4 === 0) {
+      // Update text step label every 20%
+      if (currentWidth % 20 === 0) {
         stepIndex = (stepIndex + 1) % i18n[currentLang].steps.length;
         stepLabel.textContent = i18n[currentLang].steps[stepIndex];
       }
-    }, 1200);
+    }, 800);
+
+    // Generate Dynamic Falling Honey Drops that land on the exact fill front
+    function spawnHoneyDrop() {
+      const drop = document.createElement('div');
+      drop.className = 'falling-drop';
+      
+      // Position drop right over the active liquid border
+      const offset = Math.max(3, currentWidth - 1);
+      drop.style.left = `${offset}%`;
+      drop.style.setProperty('--drip-speed', `${1.2 + Math.random() * 0.8}s`);
+      
+      dripContainer.appendChild(drop);
+
+      setTimeout(() => {
+        drop.remove();
+      }, 2000);
+    }
+
+    // Continuous drop spawning
+    setInterval(spawnHoneyDrop, 600);
 
     // Generate Stars & Fireflies
     const starBg = document.getElementById('star-bg');
