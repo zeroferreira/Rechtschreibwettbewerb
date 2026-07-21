@@ -14,8 +14,8 @@
   <style>
     :root {
       --gold-primary: #fbbf24;
-      --gold-glow: rgba(251, 191, 36, 0.45);
-      --ceramic-white: rgba(255, 255, 255, 0.08);
+      --honey-glow: rgba(245, 158, 11, 0.65);
+      --honey-liquid: linear-gradient(180deg, #fef08a 0%, #f59e0b 45%, #d97706 85%, #b45309 100%);
     }
 
     body {
@@ -131,6 +131,71 @@
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.08);
       box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+
+    /* Honey Jar Glassmorphism Container */
+    .honey-jar-glass {
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1.5px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 
+        inset 0 2px 4px rgba(255, 255, 255, 0.4),
+        inset 0 -3px 6px rgba(0, 0, 0, 0.6),
+        0 10px 25px rgba(0, 0, 0, 0.5),
+        0 0 20px rgba(245, 158, 11, 0.15);
+      position: relative;
+      overflow: hidden;
+      border-radius: 9999px;
+    }
+
+    /* Liquid Honey Fill Effect */
+    .honey-fill {
+      background: var(--honey-liquid);
+      position: relative;
+      transition: width 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+      box-shadow: 
+        0 0 20px rgba(245, 158, 11, 0.8),
+        inset 0 2px 3px rgba(255, 255, 255, 0.7),
+        inset 0 -2px 4px rgba(180, 83, 9, 0.6);
+      border-radius: 9999px;
+    }
+
+    /* Surface Wave Wave Animation on Honey Liquid */
+    .honey-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 100%;
+      background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.45) 50%, rgba(255,255,255,0) 100%);
+      animation: honeyShine 2.5s ease-in-out infinite;
+    }
+
+    @keyframes honeyShine {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* Dripping Honey Drops Animation */
+    .honey-drop {
+      position: absolute;
+      width: 7px;
+      height: 7px;
+      background: #f59e0b;
+      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
+      animation: dropHoney 2.8s cubic-bezier(0.55, 0.085, 0.68, 0.53) infinite;
+      opacity: 0;
+    }
+
+    @keyframes dropHoney {
+      0% { transform: translateY(-4px) scale(0.6); opacity: 0; }
+      20% { opacity: 1; transform: translateY(0px) scale(1); }
+      70% { opacity: 1; transform: translateY(12px) scale(1.1); }
+      90% { transform: translateY(22px) scale(0.3); opacity: 0; }
+      100% { opacity: 0; }
     }
 
     /* Ceramic Floating Bee Badge */
@@ -284,17 +349,27 @@
           Estamos aplicando mejoras de seguridad, optimización de base de datos y nuevas funciones. La plataforma se restablecerá automáticamente en breve.
         </p>
 
-        <!-- Inner Glass Loading Status Box -->
-        <div class="inner-glass w-full max-w-md rounded-2xl p-5 backdrop-blur-md mb-6 flex flex-col items-center">
-          <div class="flex items-center gap-3 text-sm font-semibold text-yellow-300 tracking-wide mb-3">
-            <i data-lucide="loader-2" class="w-5 h-5 animate-spin text-yellow-400"></i>
-            <span id="step-label" class="loading-dots">Optimizando módulos y recursos</span>
+        <!-- Inner Glass Container with Glassmorphism Honey Fill Bar -->
+        <div class="inner-glass w-full max-w-md rounded-2xl p-6 backdrop-blur-md mb-6 flex flex-col items-center">
+          
+          <!-- Step Text Label & Percentage Counter -->
+          <div class="w-full flex justify-between items-center text-xs font-bold text-yellow-300 tracking-wider mb-3">
+            <span class="flex items-center gap-2">
+              <i data-lucide="droplet" class="w-4 h-4 text-amber-400 fill-amber-400 animate-bounce"></i>
+              <span id="step-label" class="loading-dots">Llenando depósito de miel</span>
+            </span>
+            <span id="honey-percentage" class="text-amber-300 font-mono text-sm">18%</span>
           </div>
 
-          <!-- Pulsing Status Bar -->
-          <div class="w-full bg-black/60 rounded-full h-3 overflow-hidden p-0.5 border border-white/10 relative">
-            <div id="loading-bar" class="bg-gradient-to-r from-amber-500 via-yellow-400 to-yellow-200 h-full rounded-full transition-all duration-700 ease-out shadow-[0_0_12px_rgba(251,191,36,0.6)]" style="width: 55%;"></div>
+          <!-- Glassmorphism Honey Bar Tube -->
+          <div class="honey-jar-glass w-full h-5 p-0.5 relative flex items-center">
+            <!-- Filling Honey Liquid -->
+            <div id="loading-bar" class="honey-fill h-full flex items-center justify-end pr-1" style="width: 18%;">
+              <!-- Honey Drop at liquid edge -->
+              <div class="honey-drop"></div>
+            </div>
           </div>
+
         </div>
 
         <!-- Note -->
@@ -312,7 +387,7 @@
     &copy; 2026 SPELLING BEE PLATFORM. ALL RIGHTS RESERVED.
   </footer>
 
-  <!-- Script for Dynamic Languages and Loader Steps -->
+  <!-- Script for Dynamic Languages and Smooth Honey Filling -->
   <script>
     // Initialize Lucide Icons
     lucide.createIcons();
@@ -324,6 +399,7 @@
         title: "ACTUALIZANDO <span class='title-shimmer'>SERVIDOR</span>",
         desc: "Estamos aplicando mejoras de seguridad, optimización de base de datos y nuevas funciones. La plataforma se restablecerá automáticamente en breve.",
         steps: [
+          "Llenando depósito de miel",
           "Optimizando módulos y recursos",
           "Sincronizando bases de datos",
           "Verificando seguridad de la red",
@@ -336,6 +412,7 @@
         title: "UPGRADING <span class='title-shimmer'>SERVER</span>",
         desc: "We are applying security enhancements, database optimizations, and new features. The platform will automatically resume shortly.",
         steps: [
+          "Filling honey reservoir",
           "Optimizing modules and assets",
           "Synchronizing databases",
           "Verifying network security",
@@ -348,6 +425,7 @@
         title: "MISE À JOUR DU <span class='title-shimmer'>SERVEUR</span>",
         desc: "Nous appliquons des améliorations de sécurité, d'optimisation de base de données et de nouvelles fonctionnalités. La plateforme redémarrera sous peu.",
         steps: [
+          "Remplissage del réservoir de miel",
           "Optimisation des modules et ressources",
           "Synchronisation des bases de données",
           "Vérification de la sécurité réseau",
@@ -360,6 +438,7 @@
         title: "SERVER <span class='title-shimmer'>WIRD AKTUALISIERT</span>",
         desc: "Wir führen Sicherheitsverbesserungen, Datenbank-Optimierungen und neue Funktionen ein. Die Plattform wird in Kürze automatisch wiederhergestellt.",
         steps: [
+          "Honigspeicher wird gefüllt",
           "Module und Ressourcen werden optimiert",
           "Datenbanken werden synchronisiert",
           "Netzwerksicherheit wird überprüft",
@@ -400,18 +479,28 @@
       }, 200);
     }
 
-    // Dynamic Loading Progress Cycle
+    // Continuous & Progressive Honey Filling Effect (12% -> 99%)
     const loadingBar = document.getElementById('loading-bar');
     const stepLabel = document.getElementById('step-label');
+    const honeyPercentage = document.getElementById('honey-percentage');
 
-    let currentWidth = 55;
+    let currentWidth = 12;
     setInterval(() => {
-      currentWidth = 45 + Math.floor(Math.random() * 45);
-      loadingBar.style.width = `${currentWidth}%`;
+      // Gradually fill up to 99%, then loop smoothly back
+      currentWidth += Math.floor(Math.random() * 8) + 4;
+      if (currentWidth >= 99) {
+        currentWidth = 12;
+      }
 
-      stepIndex = (stepIndex + 1) % i18n[currentLang].steps.length;
-      stepLabel.textContent = i18n[currentLang].steps[stepIndex];
-    }, 3200);
+      loadingBar.style.width = `${currentWidth}%`;
+      honeyPercentage.textContent = `${currentWidth}%`;
+
+      // Cycle text step label periodically
+      if (currentWidth % 4 === 0) {
+        stepIndex = (stepIndex + 1) % i18n[currentLang].steps.length;
+        stepLabel.textContent = i18n[currentLang].steps[stepIndex];
+      }
+    }, 1200);
 
     // Generate Stars & Fireflies
     const starBg = document.getElementById('star-bg');
